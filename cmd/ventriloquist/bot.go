@@ -9,6 +9,7 @@ import (
 
 	"github.com/Xe/ln"
 	"github.com/bwmarrin/discordgo"
+	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
 
 type bot struct {
@@ -136,23 +137,30 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	msg := m.Content
-	fl := strings.Fields(msg)
-	f0 := fl[0]
-	f := ln.F{
-		"author_id":       m.Author.ID,
-		"author_username": m.Author.Username + "#" + m.Author.Discriminator,
-	}
-
-	// Proxy tags are defined as the following:
-	//   Foo\ bar
-	// Is a message by "Foo" saying "bar".
-	if !strings.Contains(f0, "\\") {
+	if m.Author.Bot {
 		return
 	}
 
-	name := f0[:len(f0)-1]
-	f["name"] = name
+	msg := m.Content
+	f := ln.F{
+		"channel_id":      m.ChannelID,
+		"author_id":       m.Author.ID,
+		"author_username": m.Author.Username + "#" + m.Author.Discriminator,
+		"message_id":      m.ID,
+	}
+
+	match, err := proxytag.Nameslash(msg)
+	if err != nil {
+		if err == proxytag.ErrNoMatch {
+			// don't care, not a proxied line, yolo
+			ln.Log(ctx, f, ln.Action("not a proxied line"))
+			return
+		}
+
+		ln.Error(ctx, err, f, ln.Action("looking for proxied lines"))
+	}
+
+	f["name"] = match.Name
 
 	members, err := b.db.FindSystemmates(m.Author.ID)
 	if err != nil {
@@ -162,7 +170,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	var member Systemmate
 	for _, m := range members {
-		if strings.EqualFold(name, m.Name) {
+		if strings.EqualFold(match.Name, m.Name) {
 			member = m
 		}
 	}
@@ -194,7 +202,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	dw := dWebhook{
-		Content:   strings.Join(fl[1:], " "),
+		Content:   match.Body,
 		Username:  fmt.Sprintf("%s of %s#%s", member.Name, m.Author.Username, m.Author.Discriminator),
 		AvatarURL: member.AvatarURL,
 	}
@@ -210,4 +218,5 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		ln.Error(context.Background(), err, f, ln.Action("deleting original message"))
 		return
 	}
+	ln.Log(ctx, ln.Action("deleted message"), f)
 }
