@@ -15,12 +15,12 @@ func (cs testCase) Run(t *testing.T) {
 	if cs.output != m {
 		t.Logf("expected: %v", cs.output)
 		t.Logf("output:   %v", m)
-		t.Fatal("match mismatch")
+		t.Error("match mismatch")
 	}
 
 	if cs.err != nil {
 		if cs.err != err {
-			t.Fatalf("wanted error %v, got: %v", cs.err, err)
+			t.Errorf("wanted error %v, got: %v", cs.err, err)
 		}
 	}
 }
