@@ -1,6 +1,11 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"strings"
+
+	"github.com/Xe/ln"
 	"github.com/Xe/uuid"
 	"github.com/asdine/storm"
 )
@@ -34,6 +39,49 @@ func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (d DB) DeleteSystemmate(coreDiscordID, name string) error {
+	mates, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range mates {
+		if strings.EqualFold(name, m.Name) {
+			return d.s.DeleteStruct(&m)
+		}
+	}
+
+	return errors.New("database: systemmate not found")
+}
+
+func (d DB) NukeSystem(coreDiscordID string) error {
+	mates, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for _, m := range mates {
+		if err := d.s.DeleteStruct(&m); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		ctx := ln.WithF(context.Background(), ln.F{
+			"core_discord_id": coreDiscordID,
+		})
+
+		for _, err := range errs {
+			ln.Error(ctx, err)
+		}
+
+		return errors.New("error in deletion, contact the bot admin")
+	}
+
+	return nil
 }
 
 func (d DB) AddWebhook(channelID, whurl string) error {

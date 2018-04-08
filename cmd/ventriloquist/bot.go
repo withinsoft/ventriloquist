@@ -19,7 +19,7 @@ type bot struct {
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) != 3 {
-		return errors.New("usage: ;add <name> <avatar url>\n\n(don't include the angle brackets)")
+		return errors.New("usage: .add <name> <avatar url>\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -51,7 +51,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) != 3 {
-		return errors.New("usage: ;add <name> <avatar url>\n\n(don't include the angle brackets)")
+		return errors.New("usage: .update <name> <avatar url>\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -97,7 +97,39 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 }
 
 func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	return errors.New("not implemented")
+	if len(parv) != 2 {
+		return errors.New("usage: .del <name>\n\n(don't include the angle brackets)")
+	}
+
+	name := parv[1]
+	err := b.db.DeleteSystemmate(m.Author.ID, name)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
+	return err
+}
+
+func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	tkn := Hash(s.State.User.ID, m.Author.ID)
+
+	if len(parv) != 2 {
+		return fmt.Errorf("usage: .nuke %s\n\nThe token shown is your unique delete token", tkn)
+	}
+
+	utkn := parv[1]
+	if !strings.EqualFold(tkn, utkn) {
+		return errors.New("invalid delete token, see .nuke")
+	}
+
+	err := b.db.NukeSystem(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, "System deleted. Have a good day.")
+	return err
 }
 
 func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
