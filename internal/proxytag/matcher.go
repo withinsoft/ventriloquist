@@ -43,6 +43,7 @@ func Parse(message string, matchers ...Matcher) (Match, error) {
 		}
 
 		m = mm
+		err = merr
 	}
 
 	return m, err

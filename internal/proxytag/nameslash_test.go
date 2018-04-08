@@ -6,11 +6,7 @@ import (
 )
 
 func TestNameslash(t *testing.T) {
-	cases := []struct {
-		input string
-		match Match
-		err   error
-	}{
+	cases := []testCase{
 		{
 			err: ErrNoMatch,
 		},
@@ -28,7 +24,7 @@ func TestNameslash(t *testing.T) {
 		},
 		{
 			input: "Nicole\\ hi there",
-			match: Match{
+			output: Match{
 				Name:   "Nicole",
 				Method: "Nameslash",
 				Body:   "hi there",
@@ -37,18 +33,7 @@ func TestNameslash(t *testing.T) {
 	}
 
 	for _, cs := range cases {
-		t.Run(fmt.Sprint(cs), func(t *testing.T) {
-			m, err := Nameslash(cs.input)
-
-			if cs.match != m {
-				t.Logf("expected: %v", cs.match)
-				t.Logf("output:   %v", m)
-				t.Fatal("match mismatch")
-			}
-
-			if cs.err != err {
-				t.Fatalf("wanted error %v, got: %v", cs.err, err)
-			}
-		})
+		cs.matcher = Nameslash
+		t.Run(fmt.Sprint(cs), cs.Run)
 	}
 }
