@@ -16,6 +16,10 @@ func TestHalfSigils(t *testing.T) {
 			err:   ErrNoMatch,
 		},
 		{
+			input: "aad",
+			err:   ErrNoMatch,
+		},
+		{
 			input: "[memes",
 			output: Match{
 				InitialSigil: "[",
@@ -35,6 +39,14 @@ func TestSigls(t *testing.T) {
 	cases := []testCase{
 		{
 			input: "as",
+			err:   ErrNoMatch,
+		},
+		{
+			input: "fast don't lie",
+			err:   ErrNoMatch,
+		},
+		{
+			input: "[as",
 			err:   ErrNoMatch,
 		},
 		{
