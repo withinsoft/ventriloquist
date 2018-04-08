@@ -43,6 +43,7 @@ func main() {
 
 	cs := bbot.NewCommandSet()
 	cs.AddCmd("add", "adds a systemmate to the list of proxy tags", bbot.NoPermissions, b.addSystemmate)
+	cs.AddCmd("list", "lists systemmates", bbot.NoPermissions, b.listSystemmates)
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		cs.Run(s, m.Message)

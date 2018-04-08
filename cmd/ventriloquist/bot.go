@@ -40,11 +40,33 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		"avatar_url": aurl,
 	})
 
-	return b.db.AddSystemmate(sm)
+	err = b.db.AddSystemmate(sm)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name)
+	return err
+}
+
+func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	return errors.New("not implemented")
 }
 
 func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	return errors.New("not implemented")
+	members, err := b.db.FindSystemmates(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	sb := strings.Builder{}
+	sb.WriteString("members:\n")
+	for i, m := range members {
+		sb.WriteString(fmt.Sprintf("%d. %s - <%s>\n", (i + 1), m.Name, m.AvatarURL))
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, sb.String())
+	return err
 }
 
 func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
@@ -106,6 +128,9 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 				ln.Error(ctx, err, f, ln.Action("adding webhook to database"))
 				return
 			}
+		} else {
+			ln.Error(ctx, err, f, ln.Action("finding webhook"))
+			return
 		}
 	}
 
