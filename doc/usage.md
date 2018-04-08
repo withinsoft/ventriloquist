@@ -107,3 +107,29 @@ to get back a message like:
 members:
 1. Nicole - https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png
 ```
+
+### Delete systemmates
+
+In any channel the bot is in:
+
+```
+.del Nicole
+```
+
+to delete a systemmate named Nicole.
+
+### Nuke all data for your system
+
+In any channel the bot is in:
+
+```
+.nuke
+```
+
+to get your unique delete token
+
+```
+.nuke <your-token>
+```
+
+to remove all of the data.
