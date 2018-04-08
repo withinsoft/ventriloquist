@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/Xe/ln"
 	"github.com/asdine/storm"
@@ -18,6 +19,8 @@ type config struct {
 
 func main() {
 	ctx := context.Background()
+
+	os.MkdirAll("var", 0700)
 
 	var cfg config
 	err := envdecode.StrictDecode(&cfg)
@@ -44,6 +47,7 @@ func main() {
 	cs := bbot.NewCommandSet()
 	cs.AddCmd("add", "adds a systemmate to the list of proxy tags", bbot.NoPermissions, b.addSystemmate)
 	cs.AddCmd("list", "lists systemmates", bbot.NoPermissions, b.listSystemmates)
+	cs.AddCmd("update", "updates systemmates avatars", bbot.NoPermissions, b.updateAvatar)
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		cs.Run(s, m.Message)

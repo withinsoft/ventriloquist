@@ -50,7 +50,34 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 }
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	return errors.New("not implemented")
+	if len(parv) != 3 {
+		return errors.New("usage: ;add <name> <avatar url>\n\n(don't include the angle brackets)")
+	}
+
+	name := parv[1]
+	aurl := parv[2]
+	_, err := url.Parse(aurl)
+	if err != nil {
+		return fmt.Errorf("can't parse avatar url: %v", err)
+	}
+
+	members, err := b.db.FindSystemmates(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	var mm Systemmate
+	for _, m := range members {
+		if strings.EqualFold(name, m.Name) {
+			mm = m
+		}
+	}
+	if mm.ID == "" {
+		return errors.New("no such systemmate")
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
+	return err
 }
 
 func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []string) error {
