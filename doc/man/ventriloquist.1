@@ -1,0 +1,58 @@
+.Dd April 7, 2018
+.Dt VENTRILOQUIST 1 URM
+
+
+.Sh NAME
+.Nm ventriloquist
+.Nd A Discord bot that translates name-slash proxy tagging into discrete messages via webhooks.
+
+
+.Sh SYNOPSIS
+.Nm
+
+
+.Sh ENVIRONMENT
+.Bl -tag -width "abc" -offset indent -compact
+
+.It Ev DB_PATH
+Specifies the path to the boltdb database
+.Nm
+stores all of its user data in.
+
+If this is not set, it defaults to var/vent.db.
+
+.It Ev DISCORD_TOKEN
+Specifies the Discord bot token
+.Nm
+uses to interact with the Discord API. This MUST be set.
+
+.El
+
+
+.Sh IMPLEMENTATION NOTES
+
+.Nm
+only supports name-slash tagging at the moment. Other proxy tagging methods will be added in the future as the code becomes mature enough to handle multiple proxy tags and methods of detection of them.
+
+.Nm
+is very minimal, by design.
+
+
+.Sh EXAMPLES
+
+ventriloquist
+
+
+.Sh DIAGNOSTICS
+
+.Ex -std routed
+
+
+.Sh SEE ALSO
+
+.Bl -bullet
+
+.It
+https://github.com/withinsoft/ventriloquist
+
+.El
