@@ -5,16 +5,18 @@ import "errors"
 // Match is the result of a proxy tag scraping.
 type Match struct {
 	// Name is the name of the systemmate, if the proxy method supplies this
-	Name string
+	Name string `json:"name,omitempty"`
 	// IntialSigil and EndSigil are the beginning and end non-alphanumeric
 	// text to signify the speaker
-	InitialSigil, EndSigil string
+	InitialSigil string `json:"initial_sigil,omitempty"`
+	EndSigil     string `json:"end_sigil,omitempty"`
 	// Method is the proxy method the scraper is looking for.
-	Method string
+	Method string `json:"method"`
 	// Body is the rest of what the systemmate said.
-	Body string
+	Body string `json:"body"`
 }
 
+// Global errors.
 var (
 	ErrNoMatch = errors.New("proxytag: no match")
 )

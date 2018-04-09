@@ -9,7 +9,7 @@ func TestShuck(t *testing.T) {
 	}
 }
 
-func TestHalfSigils(t *testing.T) {
+func TestHalfSigilStart(t *testing.T) {
 	cases := []testCase{
 		{
 			input: "a",
@@ -23,14 +23,40 @@ func TestHalfSigils(t *testing.T) {
 			input: "[memes",
 			output: Match{
 				InitialSigil: "[",
-				Method:       "HalfSigils",
+				Method:       "HalfSigilStart",
 				Body:         "memes",
 			},
 		},
 	}
 
 	for _, cs := range cases {
-		cs.matcher = HalfSigils
+		cs.matcher = HalfSigilStart
+		t.Run(cs.input, cs.Run)
+	}
+}
+
+func TestHalfSigilEnd(t *testing.T) {
+	cases := []testCase{
+		{
+			input: "a",
+			err:   ErrNoMatch,
+		},
+		{
+			input: "aad",
+			err:   ErrNoMatch,
+		},
+		{
+			input: "memes]",
+			output: Match{
+				EndSigil: "]",
+				Method:   "HalfSigilEnd",
+				Body:     "memes",
+			},
+		},
+	}
+
+	for _, cs := range cases {
+		cs.matcher = HalfSigilEnd
 		t.Run(cs.input, cs.Run)
 	}
 }

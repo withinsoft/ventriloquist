@@ -18,6 +18,10 @@ func (cs testCase) Run(t *testing.T) {
 		t.Error("match mismatch")
 	}
 
+	if cs.err == nil && err != nil {
+		t.Fatalf("error found: %v", err)
+	}
+
 	if cs.err != nil {
 		if cs.err != err {
 			t.Errorf("wanted error %v, got: %v", cs.err, err)
