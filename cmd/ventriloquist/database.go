@@ -8,6 +8,7 @@ import (
 	"github.com/Xe/ln"
 	"github.com/Xe/uuid"
 	"github.com/asdine/storm"
+	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
 
 type DB struct {
@@ -16,9 +17,9 @@ type DB struct {
 
 type Systemmate struct {
 	ID            string `storm:"id"`
-	Name          string `storm:"index"`
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
+	proxytag.Match
 }
 
 type Webhook struct {
@@ -27,9 +28,9 @@ type Webhook struct {
 	WebhookURL string
 }
 
-func (d DB) AddSystemmate(s Systemmate) error {
+func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
 	s.ID = uuid.New()
-	return d.s.Save(&s)
+	return s, d.s.Save(&s)
 }
 
 func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
@@ -54,6 +55,24 @@ func (d DB) DeleteSystemmate(coreDiscordID, name string) error {
 	}
 
 	return errors.New("database: systemmate not found")
+}
+
+func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Systemmate, error) {
+	mm := m
+	mm.Body = ""
+
+	sms, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return Systemmate{}, err
+	}
+
+	for _, sm := range sms {
+		if sm.Match == mm {
+			return sm, nil
+		}
+	}
+
+	return Systemmate{}, errors.New("database: systemmate not found")
 }
 
 func (d DB) NukeSystem(coreDiscordID string) error {

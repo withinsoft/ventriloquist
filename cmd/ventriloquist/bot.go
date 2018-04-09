@@ -32,8 +32,11 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 	sm := Systemmate{
 		CoreDiscordID: m.Author.ID,
-		Name:          name,
 		AvatarURL:     aurl,
+		Match: proxytag.Match{
+			Name:   name,
+			Method: "Nameslash",
+		},
 	}
 
 	ln.Log(context.Background(), ln.Action("adding systemmate"), ln.F{
@@ -41,7 +44,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		"avatar_url": aurl,
 	})
 
-	err = b.db.AddSystemmate(sm)
+	_, err = b.db.AddSystemmate(sm)
 	if err != nil {
 		return err
 	}
