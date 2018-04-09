@@ -1,6 +1,9 @@
 package proxytag
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // Match is the result of a proxy tag scraping.
 type Match struct {
@@ -16,6 +19,26 @@ type Match struct {
 	Body string `json:"body"`
 }
 
+func (m Match) String() string {
+	sb := strings.Builder{}
+
+	sb.WriteString("Method: " + m.Method)
+
+	if m.Name != "" {
+		sb.WriteString(", Name: " + m.Name)
+	}
+
+	if m.InitialSigil != "" {
+		sb.WriteString(", Initial sigil: " + m.InitialSigil)
+	}
+
+	if m.EndSigil != "" {
+		sb.WriteString(", End sigil: " + m.EndSigil)
+	}
+
+	return sb.String()
+}
+
 // Global errors.
 var (
 	ErrNoMatch = errors.New("proxytag: no match")
@@ -29,11 +52,6 @@ type Matcher func(string) (Match, error)
 
 // Parse parses a message with a list of matchers and returns the
 func Parse(message string, matchers ...Matcher) (Match, error) {
-	var (
-		m   Match
-		err error = ErrNoMatch
-	)
-
 	for _, mat := range matchers {
 		mm, merr := mat(message)
 		if merr != nil {
@@ -44,9 +62,8 @@ func Parse(message string, matchers ...Matcher) (Match, error) {
 			return mm, merr
 		}
 
-		m = mm
-		err = merr
+		return mm, nil
 	}
 
-	return m, err
+	return Match{}, ErrNoMatch
 }
