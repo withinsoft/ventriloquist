@@ -17,6 +17,10 @@ type dWebhook struct {
 }
 
 func sendWebhook(whurl string, dw dWebhook) error {
+	if len(dw.Username) > 32 {
+		dw.Username = dw.Username[:32]
+	}
+
 	data, err := json.Marshal(&dw)
 	if err != nil {
 		log.Fatal(err)

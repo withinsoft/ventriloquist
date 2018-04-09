@@ -133,3 +133,19 @@ to get your unique delete token
 ```
 
 to remove all of the data.
+
+### Changing proxy method
+
+In any channel the bot is in:
+
+```
+.chproxy
+```
+
+then correct it with:
+
+```
+.chproxy Nicole [i am listening for a sound beyond sound]
+```
+
+and the proxying settings will be immediately updated.

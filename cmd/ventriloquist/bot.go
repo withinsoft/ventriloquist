@@ -32,10 +32,11 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 	sm := Systemmate{
 		CoreDiscordID: m.Author.ID,
+		Name:          name,
 		AvatarURL:     aurl,
 		Match: proxytag.Match{
-			Name:   name,
 			Method: "Nameslash",
+			Name:   name,
 		},
 	}
 
@@ -49,7 +50,51 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name)
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with default Nameslash proxying. Please use .chproxy to customize this further.")
+	return err
+}
+
+func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	const compPhrase = `i am listening for a sound beyond sound`
+
+	if len(parv) == 1 {
+		return errors.New("usage: .chproxy <tulpa name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
+	}
+
+	name := parv[1]
+	line := strings.Join(parv[2:], " ")
+	match, err := proxytag.Parse(line, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
+	if err != nil {
+		return err
+	}
+
+	if !strings.EqualFold(match.Body, compPhrase) {
+		return fmt.Errorf("please proxy %q", compPhrase)
+	}
+
+	var member Systemmate
+	sms, err := b.db.FindSystemmates(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, sm := range sms {
+		if strings.EqualFold(name, sm.Name) {
+			member = sm
+		}
+	}
+
+	if member.ID == "" {
+		return fmt.Errorf("no such systemmate %q, check .list", name)
+	}
+
+	member.Match = match
+	err = b.db.UpdateSystemmate(member)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s now is set to use the following proxying settings: %s", name, match))
 	return err
 }
 
@@ -93,7 +138,7 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 	sb := strings.Builder{}
 	sb.WriteString("members:\n")
 	for i, m := range members {
-		sb.WriteString(fmt.Sprintf("%d. %s - <%s>\n", (i + 1), m.Name, m.AvatarURL))
+		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, m.Match))
 	}
 
 	_, err = s.ChannelMessageSend(m.ChannelID, sb.String())
@@ -152,7 +197,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		"message_id":      m.ID,
 	}
 
-	match, err := proxytag.Nameslash(msg)
+	match, err := proxytag.Parse(msg, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
 	if err != nil {
 		if err == proxytag.ErrNoMatch {
 			// don't care, not a proxied line, yolo
@@ -165,20 +210,9 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	f["name"] = match.Name
 
-	members, err := b.db.FindSystemmates(m.Author.ID)
+	member, err := b.db.FindSystemmateByMatch(m.Author.ID, match)
 	if err != nil {
-		ln.Error(context.Background(), err, f, ln.Action("finding systemmate"))
-		return
-	}
-
-	var member Systemmate
-	for _, m := range members {
-		if strings.EqualFold(match.Name, m.Name) {
-			member = m
-		}
-	}
-
-	if member.Name == "" {
+		ln.Error(ctx, err, f, ln.Action("find systemmate by match"))
 		return
 	}
 	f["member_id"] = member.ID

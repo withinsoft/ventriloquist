@@ -50,6 +50,7 @@ func main() {
 	cs.AddCmd("update", "updates systemmates avatars", bbot.NoPermissions, b.updateAvatar)
 	cs.AddCmd("del", "removes a systemmate", bbot.NoPermissions, b.delSystemmate)
 	cs.AddCmd("nuke", "removes all system data", bbot.NoPermissions, b.nukeSystem)
+	cs.AddCmd("chproxy", "changes proxy method for a systemmate", bbot.NoPermissions, b.changeProxy)
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		cs.Run(s, m.Message)

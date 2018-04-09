@@ -17,9 +17,10 @@ type DB struct {
 
 type Systemmate struct {
 	ID            string `storm:"id"`
+	Name          string
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
-	proxytag.Match
+	Match         proxytag.Match
 }
 
 type Webhook struct {
@@ -31,6 +32,10 @@ type Webhook struct {
 func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
 	s.ID = uuid.New()
 	return s, d.s.Save(&s)
+}
+
+func (d DB) UpdateSystemmate(s Systemmate) error {
+	return d.s.Save(&s)
 }
 
 func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
@@ -58,16 +63,13 @@ func (d DB) DeleteSystemmate(coreDiscordID, name string) error {
 }
 
 func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Systemmate, error) {
-	mm := m
-	mm.Body = ""
-
 	sms, err := d.FindSystemmates(coreDiscordID)
 	if err != nil {
 		return Systemmate{}, err
 	}
 
 	for _, sm := range sms {
-		if sm.Match == mm {
+		if sm.Match.String() == m.String() {
 			return sm, nil
 		}
 	}
