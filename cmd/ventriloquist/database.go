@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/Xe/ln"
@@ -30,6 +31,10 @@ type Webhook struct {
 }
 
 func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
+	if len(s.Name) > 15 {
+		return Systemmate{}, fmt.Errorf("%s is too long, 15 characters max", s.Name)
+	}
+
 	sms, err := d.FindSystemmates(s.CoreDiscordID)
 	if err != nil {
 		return Systemmate{}, err
