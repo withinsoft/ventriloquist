@@ -18,6 +18,26 @@ type bot struct {
 	dg  *discordgo.Session
 }
 
+func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	ch, err := s.State.Channel(m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	gu, err := s.State.Member(ch.GuildID, m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range gu.Roles {
+		if strings.EqualFold(b.cfg.AdminRole, r) {
+			return nil
+		}
+	}
+
+	return errors.New("not authorized")
+}
+
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) != 3 {
 		return errors.New("usage: .add <name> <avatar url>\n\n(don't include the angle brackets)")

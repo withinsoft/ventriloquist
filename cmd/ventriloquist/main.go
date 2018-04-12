@@ -15,6 +15,7 @@ import (
 type config struct {
 	DiscordToken string `env:"DISCORD_TOKEN,required"`
 	DBPath       string `env:"DB_PATH,default=var/vent.db"`
+	AdminRole    string `env:"ADMIN_ROLE,required"`
 }
 
 func main() {
