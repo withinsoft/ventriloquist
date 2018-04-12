@@ -37,7 +37,7 @@ func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
 
 	sms, err := d.FindSystemmates(s.CoreDiscordID)
 	if err != nil {
-		return Systemmate{}, err
+		goto skip
 	}
 
 	for _, sm := range sms {
@@ -46,6 +46,7 @@ func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
 		}
 	}
 
+skip:
 	s.ID = uuid.New()
 	return s, d.s.Save(&s)
 }
