@@ -9,6 +9,21 @@ func TestShuck(t *testing.T) {
 	}
 }
 
+func TestIsSigil(t *testing.T) {
+	cases := []rune{
+		'[',
+		'$',
+	}
+
+	for _, cs := range cases {
+		t.Run(string(cs), func(t *testing.T) {
+			if !isSigil(cs) {
+				t.Fatalf("not sigil: %s", string(cs))
+			}
+		})
+	}
+}
+
 func TestHalfSigilStart(t *testing.T) {
 	cases := []testCase{
 		{
@@ -23,6 +38,14 @@ func TestHalfSigilStart(t *testing.T) {
 			input: "[memes",
 			output: Match{
 				InitialSigil: "[",
+				Method:       "HalfSigilStart",
+				Body:         "memes",
+			},
+		},
+		{
+			input: "$memes",
+			output: Match{
+				InitialSigil: "$",
 				Method:       "HalfSigilStart",
 				Body:         "memes",
 			},
@@ -49,6 +72,14 @@ func TestHalfSigilEnd(t *testing.T) {
 			input: "memes]",
 			output: Match{
 				EndSigil: "]",
+				Method:   "HalfSigilEnd",
+				Body:     "memes",
+			},
+		},
+		{
+			input: "memes$",
+			output: Match{
+				EndSigil: "$",
 				Method:   "HalfSigilEnd",
 				Body:     "memes",
 			},
@@ -80,6 +111,15 @@ func TestSigls(t *testing.T) {
 			output: Match{
 				InitialSigil: "[",
 				EndSigil:     "]",
+				Method:       "Sigils",
+				Body:         "memes",
+			},
+		},
+		{
+			input: "$memes$",
+			output: Match{
+				InitialSigil: "$",
+				EndSigil:     "$",
 				Method:       "Sigils",
 				Body:         "memes",
 			},

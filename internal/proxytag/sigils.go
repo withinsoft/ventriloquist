@@ -10,6 +10,10 @@ func Shuck(victim string) string {
 	return victim[1 : len(victim)-1]
 }
 
+func isSigil(inp rune) bool {
+	return unicode.IsSymbol(inp) || unicode.IsPunct(inp)
+}
+
 // HalfSigilStart parses the "half sigil at the start" method of proxy tagging.
 //
 // Given a message of the form:
@@ -26,7 +30,7 @@ func HalfSigilEnd(message string) (Match, error) {
 
 	lst := rune(message[len(message)-1])
 	body := message[:len(message)-1]
-	if !unicode.IsPunct(lst) {
+	if !isSigil(lst) {
 		return Match{}, ErrNoMatch
 	}
 
@@ -53,7 +57,7 @@ func HalfSigilStart(message string) (Match, error) {
 
 	fst := rune(message[0])
 	body := message[1:]
-	if !unicode.IsPunct(fst) {
+	if !isSigil(fst) {
 		return Match{}, ErrNoMatch
 	}
 
@@ -82,11 +86,11 @@ func Sigils(message string) (Match, error) {
 	lst := rune(message[len(message)-1])
 	body := Shuck(message)
 
-	if !unicode.IsPunct(fst) {
+	if !isSigil(fst) {
 		return Match{}, ErrNoMatch
 	}
 
-	if !unicode.IsPunct(lst) {
+	if !isSigil(lst) {
 		return Match{}, ErrNoMatch
 	}
 
