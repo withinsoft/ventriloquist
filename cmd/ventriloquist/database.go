@@ -30,6 +30,17 @@ type Webhook struct {
 }
 
 func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
+	sms, err := d.FindSystemmates(s.CoreDiscordID)
+	if err != nil {
+		return Systemmate{}, err
+	}
+
+	for _, sm := range sms {
+		if strings.EqualFold(s.Name, sm.Name) {
+			return Systemmate{}, errors.New("can't add duplicate systemmate")
+		}
+	}
+
 	s.ID = uuid.New()
 	return s, d.s.Save(&s)
 }
