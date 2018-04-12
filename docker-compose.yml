@@ -1,0 +1,9 @@
+version: "3.1"
+
+services:
+  bot:
+    build: .
+    restart: always
+    environment:
+      ADMIN_ROLE: "${ADMIN_ROLE}"
+      DISCORD_TOKEN: "${DISCORD_TOKEN}"
