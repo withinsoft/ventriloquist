@@ -99,8 +99,8 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 }
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	if len(parv) != 3 {
-		return errors.New("usage: .update <name> <avatar url>\n\n(don't include the angle brackets)")
+	if l := len(parv); l <= 3 {
+		return errors.New("usage: .update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
 	}
 
 	name := parv[1]
@@ -116,17 +116,33 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 	}
 
 	var mm Systemmate
-	for _, m := range members {
-		if strings.EqualFold(name, m.Name) {
-			mm = m
+	for _, mb := range members {
+		if strings.EqualFold(name, mb.Name) {
+			mm = mb
 		}
 	}
 	if mm.ID == "" {
 		return errors.New("no such systemmate")
 	}
 
+	mm.AvatarURL = aurl
+
+	if len(parv) == 4 {
+		newName := parv[3]
+		mm.Name = newName
+	}
+
+	err = b.db.UpdateSystemmate(mm)
+	if err != nil {
+		return err
+	}
+
 	_, err = s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
-	return err
+	if err != nil {
+		return err
+	}
+
+	return b.listSystemmates(s, m, parv)
 }
 
 func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []string) error {
