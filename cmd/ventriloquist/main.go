@@ -75,6 +75,12 @@ func main() {
 		5,
 		b.updateAvatar,
 	)))
+	must(cs.AddCmd("mod_chproxy", "mod: changes proxy method of a systemmate for a user", b.modOnly, b.modForce(
+		"update",
+		"usage: .mod_chproxy <mention the user>\n\n(don't include the angle brackets)",
+		999,
+		b.changeProxy,
+	)))
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err := cs.Run(s, m.Message)

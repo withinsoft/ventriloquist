@@ -22,8 +22,10 @@ type cmd func(*discordgo.Session, *discordgo.Message, []string) error
 
 func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
 	return func(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-		if len(parv) != parvlen {
-			return errors.New(help)
+		if parvlen != 999 {
+			if len(parv) != parvlen {
+				return errors.New(help)
+			}
 		}
 
 		mts := m.Mentions
@@ -109,7 +111,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 	const compPhrase = `i am listening for a sound beyond sound`
 
 	if len(parv) == 1 {
-		return errors.New("usage: .chproxy <tulpa name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
+		return errors.New("usage: .chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
