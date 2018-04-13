@@ -152,7 +152,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 }
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	if l := len(parv); l <= 3 {
+	if l := len(parv); l <= 2 {
 		return errors.New("usage: .update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
 	}
 
