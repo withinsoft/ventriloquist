@@ -32,13 +32,21 @@ func Nameslash(message string) (Match, error) {
 		return Match{}, ErrNoNameGiven
 	}
 
+	var cmp string
 	// the backslash MUST be present in the first word
-	if !strings.Contains(f0, `\`) {
+	if strings.Contains(f0, `\`) {
+		cmp = `\`
+	}
+	if strings.Contains(f0, `:`) {
+		cmp = ":"
+	}
+
+	if cmp == "" {
 		return Match{}, ErrNoMatch
 	}
 
 	// the backslash MUST be the last character in the first word
-	if f0[len(f0)-1] != '\\' {
+	if string(f0[len(f0)-1]) != cmp {
 		return Match{}, ErrNoMatch
 	}
 
