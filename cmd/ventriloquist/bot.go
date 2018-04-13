@@ -18,6 +18,37 @@ type bot struct {
 	dg  *discordgo.Session
 }
 
+type cmd func(*discordgo.Session, *discordgo.Message, []string) error
+
+func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
+	return func(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+		if len(parv) != parvlen {
+			return errors.New(help)
+		}
+
+		mts := m.Mentions
+		if len(mts) != 1 {
+			return errors.New("please mention the user you want to update as the first argument")
+		}
+
+		cparv := []string{"." + verb}
+		if parvlen != 0 {
+			cparv = append(cparv, parv[2:]...)
+		}
+
+		ln.Log(context.Background(), ln.Action("impersonation"), ln.F{
+			"command":      verb,
+			"parv":         parv,
+			"mod_username": m.Author.Username + "#" + m.Author.Discriminator,
+			"mod_id":       m.Author.ID,
+			"channel":      m.ChannelID,
+		})
+		m.Author.ID = mts[0].ID // hack
+
+		return doer(s, m, cparv)
+	}
+}
+
 func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	ch, err := s.State.Channel(m.ChannelID)
 	if err != nil {
