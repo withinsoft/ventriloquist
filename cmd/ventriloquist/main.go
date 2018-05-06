@@ -20,6 +20,9 @@ type config struct {
 
 func main() {
 	ctx := context.Background()
+	ctx = ln.WithF(ctx, ln.F{
+		"in": "main",
+	})
 
 	_ = os.MkdirAll("var", 0700)
 
@@ -33,11 +36,13 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+	ln.Log(ctx, ln.Action("discordgo session created"))
 
 	db, err := storm.Open(cfg.DBPath)
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+	ln.Log(ctx, ln.Action("database opened"))
 
 	b := bot{
 		cfg: cfg,
@@ -81,6 +86,7 @@ func main() {
 		999,
 		b.changeProxy,
 	)))
+	ln.Log(ctx, ln.Action("added commands to mux"))
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err := cs.Run(s, m.Message)
@@ -89,12 +95,15 @@ func main() {
 		}
 	})
 	dg.AddHandler(b.proxyScrape)
+	ln.Log(ctx, ln.Action("added discordgo handlers"))
 
 	err = dg.Open()
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+	ln.Log(ctx, ln.Action("opened discordgo websocket"))
 
+	ln.Log(ctx, ln.Action("waiting forever (and a day)"))
 	for {
 		select {}
 	}
