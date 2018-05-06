@@ -293,7 +293,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	wh, err := b.db.FindWebhook(m.ChannelID)
 	if err != nil {
 		if err.Error() == "not found" {
-			whook, err := s.WebhookCreate(m.ChannelID, "ventriloquist proxy bot", "https://i.ytimg.com/vi/EzOeUXVDjSM/hqdefault.jpg")
+			whook, err := s.WebhookCreate(m.ChannelID, "ventriloquist proxy bot", "https://cdn.discordapp.com/attachments/376041158842908672/442528694762864660/unknown.png")
 			if err != nil {
 				ln.Error(ctx, err, f, ln.Action("creating webhook"))
 				return
