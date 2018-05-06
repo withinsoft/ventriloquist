@@ -266,6 +266,11 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		"message_id":      m.ID,
 	}
 
+	msg = strings.Replace(msg, "@here", "at-here", -1)
+	msg = strings.Replace(msg, "@everyone", "at-everyone", -1)
+	msg = strings.Replace(msg, "@channel", "at-channel", -1)
+	msg = strings.Replace(msg, "@someone", "at-someone", -1)
+
 	match, err := proxytag.Parse(msg, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
 	if err != nil {
 		if err == proxytag.ErrNoMatch {
@@ -276,7 +281,6 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		ln.Error(ctx, err, f, ln.Action("looking for proxied lines"))
 	}
-
 	f["name"] = match.Name
 
 	member, err := b.db.FindSystemmateByMatch(m.Author.ID, match)
