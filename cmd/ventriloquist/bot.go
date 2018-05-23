@@ -74,7 +74,7 @@ func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) 
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
-		return errors.New("usage: .add <name> <avatar url> [proxy method]\n\n(don't include the angle brackets)")
+		return errors.New("usage: .add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
