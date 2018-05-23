@@ -1,3 +1,4 @@
+B
 # Usage
 
 ## Installing
@@ -71,6 +72,12 @@ In any channel the bot is in:
 ```
 
 To add a systemmate named Nicole with [this avatar](https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png).
+
+Optionally, you can set proxy tags for systemmates on addition:
+
+```
+.add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png [this]
+```
 
 ### Proxy a message
 
