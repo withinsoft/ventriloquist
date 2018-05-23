@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
@@ -72,8 +73,8 @@ func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) 
 }
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	if len(parv) != 3 {
-		return errors.New("usage: .add <name> <avatar url>\n\n(don't include the angle brackets)")
+	if len(parv) < 3 {
+		return errors.New("usage: .add <name> <avatar url> [proxy method]\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -83,14 +84,34 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return fmt.Errorf("can't parse avatar url: %v", err)
 	}
 
+	match := proxytag.Match{
+		Method: "Nameslash",
+		Name: name,
+	}
+
+	if len(parv) > 3 {
+		tag := strings.Join(parv[3:], " ")
+
+		log.Printf("tag: %v", parv)
+
+		var err error
+		match, err = proxytag.Parse(tag, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
+		if err != nil {
+			return err
+		}
+
+		if match.Body != "this" {
+			return fmt.Errorf("proxy \"this\", not %q", match.Body)
+		}
+
+		match.Body = ""
+	}
+
 	sm := Systemmate{
 		CoreDiscordID: m.Author.ID,
 		Name:          name,
 		AvatarURL:     aurl,
-		Match: proxytag.Match{
-			Method: "Nameslash",
-			Name:   name,
-		},
+		Match: match,
 	}
 
 	ln.Log(context.Background(), ln.Action("adding systemmate"), ln.F{
@@ -103,12 +124,12 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with default Nameslash proxying. Please use .chproxy to customize this further.")
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: " + match.String() + ". Please use .chproxy to customize this further.")
 	return err
 }
 
 func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	const compPhrase = `pepsi`
+	const compPhrase = `this`
 
 	if len(parv) == 1 {
 		return errors.New("usage: .chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
