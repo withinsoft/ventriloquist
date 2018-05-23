@@ -15,10 +15,6 @@ func TestNameslash(t *testing.T) {
 			err:   ErrNoMatch,
 		},
 		{
-			input: "\\ hi",
-			err:   ErrNoNameGiven,
-		},
-		{
 			input: "foo\\bar hi",
 			err:   ErrNoMatch,
 		},

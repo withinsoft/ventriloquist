@@ -7,7 +7,6 @@ import (
 
 // Nameslash errors
 var (
-	ErrNoNameGiven      = errors.New("proxytag: no name given")
 	ErrSlashMustBeAtEnd = errors.New("proxytag: slash must be at the end of the string")
 )
 
@@ -27,10 +26,6 @@ func Nameslash(message string) (Match, error) {
 
 	fl := strings.Split(message, " ")
 	f0 := fl[0]
-
-	if len(f0) == 1 {
-		return Match{}, ErrNoNameGiven
-	}
 
 	var cmp string
 	// the backslash MUST be present in the first word

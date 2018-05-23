@@ -50,6 +50,14 @@ func TestHalfSigilStart(t *testing.T) {
 				Body:         "memes",
 			},
 		},
+		{
+			input: "[ <@72838115944828928> test",
+			output: Match{
+				InitialSigil: "[",
+				Method: "HalfSigilStart",
+				Body: " <@72838115944828928> test",
+			},
+		},
 	}
 
 	for _, cs := range cases {
