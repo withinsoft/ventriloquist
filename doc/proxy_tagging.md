@@ -24,3 +24,6 @@ a unique ID for an individual speaker. Using this and a stored avatar URL,
 we can send messages to Discord via [webhooks][webhooks] and allow them to speak
 in chatrooms almost like they had their own accounts and connections to begin
 with.
+
+[tulpamancy]: https://www.tulpa.info
+[webhooks]: https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks
