@@ -108,7 +108,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 }
 
 func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	const compPhrase = `i am listening for a sound beyond sound`
+	const compPhrase = `pepsi`
 
 	if len(parv) == 1 {
 		return errors.New("usage: .chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
@@ -275,7 +275,10 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if err != nil {
 		if err == proxytag.ErrNoMatch {
 			// don't care, not a proxied line, yolo
-			ln.Log(ctx, f, ln.Action("not a proxied line"))
+			return
+		}
+
+		if err.Error() == "database: systemmate not found" {
 			return
 		}
 
@@ -285,7 +288,10 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	member, err := b.db.FindSystemmateByMatch(m.Author.ID, match)
 	if err != nil {
-		ln.Error(ctx, err, f, ln.Action("find systemmate by match"))
+		if err.Error() != "not found" || !strings.Contains(err.Error(), "systemmate not found") {
+			ln.Error(ctx, err, f, ln.Action("find systemmate by match"))
+		}
+
 		return
 	}
 	f["member_id"] = member.ID
