@@ -11,6 +11,11 @@ func Shuck(victim string) string {
 }
 
 func isSigil(inp rune) bool {
+	switch inp {
+	case ';', '.', '?', '!':
+		return false
+	}
+
 	return unicode.IsSymbol(inp) || unicode.IsPunct(inp)
 }
 
