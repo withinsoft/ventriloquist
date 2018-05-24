@@ -63,12 +63,20 @@ $ sudo mv ventriloquist /usr/local/bin
 
 ## Using
 
+Ventriloquist is controlled by commands. A chat line is considered a command if it starts with the prefix `;`. Example:
+
+```
+;foo bar
+```
+
+for command `foo` with argument `bar`.
+
 ### Register a systemmate
 
 In any channel the bot is in:
 
 ```
-.add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png
+;add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png
 ```
 
 To add a systemmate named Nicole with [this avatar](https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png).
@@ -76,7 +84,7 @@ To add a systemmate named Nicole with [this avatar](https://cdn.discordapp.com/a
 Optionally, you can set proxy tags for systemmates on addition:
 
 ```
-.add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png [this]
+;add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png [this]
 ```
 
 ### Proxy a message
@@ -98,7 +106,7 @@ To create a message like:
 In any channel the bot is in:
 
 ```
-.update Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png
+;update Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png
 ```
 
 to update the avatar of a systemmate.
@@ -108,7 +116,7 @@ to update the avatar of a systemmate.
 In any channel the bot is in:
 
 ```
-.update Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png Twitwi
+;update Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png Twitwi
 ```
 
 to update the avatar and name of a systemmate. You need to give the same avatar url.
@@ -118,7 +126,7 @@ to update the avatar and name of a systemmate. You need to give the same avatar 
 In any channel the bot is in:
 
 ```
-.list
+;list
 ```
 
 to get back a message like:
@@ -133,7 +141,7 @@ members:
 In any channel the bot is in:
 
 ```
-.del Nicole
+;del Nicole
 ```
 
 to delete a systemmate named Nicole.
@@ -143,13 +151,13 @@ to delete a systemmate named Nicole.
 In any channel the bot is in:
 
 ```
-.nuke
+;nuke
 ```
 
 to get your unique delete token
 
 ```
-.nuke <your-token>
+;nuke <your-token>
 ```
 
 to remove all of the data.
@@ -159,13 +167,13 @@ to remove all of the data.
 In any channel the bot is in:
 
 ```
-.chproxy
+;chproxy
 ```
 
 then correct it with:
 
 ```
-.chproxy Nicole [i am listening for a sound beyond sound]
+;chproxy Nicole [this]
 ```
 
 and the proxying settings will be immediately updated.
@@ -179,7 +187,7 @@ In a perfect world, the following commands will never have to be used.
 In any channel the bot is in
 
 ```
-.mod_list @Quora
+;mod_list @Quora
 ```
 
 to get the systemmate list for the user Quora (actually mention them please).
@@ -189,7 +197,7 @@ to get the systemmate list for the user Quora (actually mention them please).
 In any channel the bot is in:
 
 ```
-.mod_del @Quora Drake
+;mod_del @Quora Drake
 ```
 
 to delete the systemmate Drake for the user Quora (actually mention them please).
@@ -199,7 +207,7 @@ to delete the systemmate Drake for the user Quora (actually mention them please)
 In any channel the bot is in:
 
 ```
-.mod_update @Quora Drake https://i.imgur.com/4TNNqbD.jpg Naenae
+;mod_update @Quora Drake https://i.imgur.com/4TNNqbD.jpg Naenae
 ```
 
 to update the systemmate Drake for the user Quora (actually mention them please) to change their avatar to another image and their name to Naenae.
@@ -209,13 +217,13 @@ to update the systemmate Drake for the user Quora (actually mention them please)
 In any channel the bot is in:
 
 ```
-.mod_chproxy @Quora Drake
+;mod_chproxy @Quora Drake
 ```
 
 then correct it with:
 
 ```
-.mod_chproxy @Quora Drake [i am listening for a sound beyond sound]
+;mod_chproxy @Quora Drake [this]
 ```
 
 and the proxying settings will be immediately updated.
