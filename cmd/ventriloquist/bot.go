@@ -254,7 +254,7 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 	tkn := Hash(s.State.User.ID, m.Author.ID)
 
 	if len(parv) != 2 {
-		return fmt.Errorf("usage: ;nuke %s\n\nCopy and paste that command to delete all of your systemmates forver (a really long time!)", tkn)
+		return fmt.Errorf("usage: ;nuke %s\n\nCopy and paste that command to delete all of your systemmates forever (a really long time!)", tkn)
 	}
 
 	utkn := parv[1]
