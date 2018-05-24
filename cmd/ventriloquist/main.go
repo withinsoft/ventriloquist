@@ -55,6 +55,7 @@ func main() {
 		}
 	}
 	cs := bbot.NewCommandSet()
+	cs.Prefix = ";"
 
 	must(cs.AddCmd("add", "adds a systemmate to the list of proxy tags", bbot.NoPermissions, b.addSystemmate))
 	must(cs.AddCmd("list", "lists systemmates", bbot.NoPermissions, b.listSystemmates))
@@ -64,25 +65,25 @@ func main() {
 	must(cs.AddCmd("chproxy", "changes proxy method for a systemmate", bbot.NoPermissions, b.changeProxy))
 	must(cs.AddCmd("mod_list", "mod: lists systemmates for a user", b.modOnly, b.modForce(
 		"list",
-		"usage: .mod_list <mention the user>\n\n(don't include the angle brackets)",
+		"usage: ;mod_list <mention the user>\n\n(don't include the angle brackets)",
 		2,
 		b.listSystemmates,
 	)))
 	must(cs.AddCmd("mod_del", "mod: removes a systemmate for a user", b.modOnly, b.modForce(
 		"del",
-		"usage: .mod_del <mention the user> <name>\n\n(don't include the angle brackets)",
+		"usage: ;mod_del <mention the user> <name>\n\n(don't include the angle brackets)",
 		3,
 		b.delSystemmate,
 	)))
 	must(cs.AddCmd("mod_update", "mod: removes a systemmate for a user", b.modOnly, b.modForce(
 		"update",
-		"usage: .mod_update <mention the user> <name> <new avatar url> <new name>\n\n(don't include the angle brackets)",
+		"usage: ;mod_update <mention the user> <name> <new avatar url> <new name>\n\n(don't include the angle brackets)",
 		5,
 		b.updateAvatar,
 	)))
 	must(cs.AddCmd("mod_chproxy", "mod: changes proxy method of a systemmate for a user", b.modOnly, b.modForce(
 		"update",
-		"usage: .mod_chproxy <mention the user>\n\n(don't include the angle brackets)",
+		"usage: ;mod_chproxy <mention the user>\n\n(don't include the angle brackets)",
 		999,
 		b.changeProxy,
 	)))

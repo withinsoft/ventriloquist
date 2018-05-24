@@ -34,7 +34,7 @@ func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.
 			return errors.New("please mention the user you want to update as the first argument")
 		}
 
-		cparv := []string{"." + verb}
+		cparv := []string{";" + verb}
 		if parvlen != 0 {
 			cparv = append(cparv, parv[2:]...)
 		}
@@ -74,7 +74,7 @@ func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) 
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
-		return errors.New("usage: .add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
+		return errors.New("usage: ;add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -132,7 +132,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 	const compPhrase = `this`
 
 	if len(parv) == 1 {
-		return errors.New("usage: .chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
+		return errors.New("usage: ;chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -174,7 +174,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if l := len(parv); l <= 2 {
-		return errors.New("usage: .update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
+		return errors.New("usage: ;update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
 	}
 
 	name := parv[1]
@@ -237,7 +237,7 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 
 func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) != 2 {
-		return errors.New("usage: .del <name>\n\n(don't include the angle brackets)")
+		return errors.New("usage: ;del <name>\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]
@@ -254,7 +254,7 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 	tkn := Hash(s.State.User.ID, m.Author.ID)
 
 	if len(parv) != 2 {
-		return fmt.Errorf("usage: .nuke %s\n\nThe token shown is your unique delete token", tkn)
+		return fmt.Errorf("usage: ;nuke %s\n\nCopy and paste that command to delete all of your systemmates forver (a really long time!)", tkn)
 	}
 
 	utkn := parv[1]
@@ -316,6 +316,8 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	f["member_id"] = member.ID
+	f["member_name"] = member.Name
+	f["proxy_match"] = member.Match.String()
 
 	wh, err := b.db.FindWebhook(m.ChannelID)
 	if err != nil {
@@ -340,7 +342,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	dw := dWebhook{
 		Content:   match.Body,
-		Username:  fmt.Sprintf("%s of %s#%s", member.Name, m.Author.Username, m.Author.Discriminator),
+		Username:  member.Name,
 		AvatarURL: member.AvatarURL,
 	}
 
