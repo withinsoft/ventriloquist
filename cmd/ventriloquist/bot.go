@@ -124,7 +124,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: " + match.String() + ". Please use .chproxy to customize this further.")
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: " + match.String() + ". Please use ;chproxy to customize this further.")
 	return err
 }
 
