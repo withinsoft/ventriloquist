@@ -90,6 +90,10 @@ func main() {
 	ln.Log(ctx, ln.Action("added commands to mux"))
 
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		if m.Author.Bot {
+			return
+		}
+
 		err := cs.Run(s, m.Message)
 		if err != nil {
 			ln.Error(context.Background(), err)
