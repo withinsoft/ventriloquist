@@ -2,6 +2,7 @@ package proxytag
 
 import (
 	"unicode"
+	"regexp"
 )
 
 // Shuck removes the first and last character of a string, analogous to
@@ -32,13 +33,15 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-
-	lst := rune(message[len(message)-1])
+	var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
+	lst := endRegex.FindString(message)
 	body := message[:len(message)-1]
+	if len(lst) < 1 {
+		return Match{}, ErrNoMatch
+	}
 	if !isSigil(lst) {
 		return Match{}, ErrNoMatch
 	}
-
 	return Match{
 		EndSigil: string(lst),
 		Method:   "HalfSigilEnd",
@@ -59,10 +62,13 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-
-	fst := rune(message[0])
+	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
+	fst := startRegex.FindString(message)
 	body := message[1:]
-	if !isSigil(fst) {
+	if len(fst) < 1 {
+		return Match{}, ErrNoMatch
+	}
+	if !isSigil(fst[0]) {
 		return Match{}, ErrNoMatch
 	}
 
