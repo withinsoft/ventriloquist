@@ -20,6 +20,7 @@ type config struct {
 	DBPath         string `env:"DB_PATH,default=var/vent.db"`
 	AdminRole      string `env:"ADMIN_ROLE,required"`
 	GraphiteServer string `env:"GRAPHITE_SERVER,required"`
+	LoggingWebhook string `env:"LOGGING_WEBHOOK,required"`
 }
 
 func main() {
@@ -35,6 +36,8 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+
+	ln.DefaultLogger.Filters = append(ln.DefaultLogger.Filters, discordLog(cfg.LoggingWebhook))
 
 	lg := log.NewLogfmtLogger(os.Stdout)
 	prov := graphite.New("ventriloquist.", lg)
@@ -58,12 +61,12 @@ func main() {
 		db:  DB{s: db},
 		dg:  dg,
 
-		proxiedLine: prov.NewCounter("discord.messages.proxied.line"),
+		proxiedLine:      prov.NewCounter("discord.messages.proxied.line"),
 		messageDeletions: prov.NewCounter("discord.messages.deleted"),
-		webhookDuration: prov.NewHistogram("discord.webhook.execution.ns", 50),
-		webhookFailure: prov.NewCounter("discord.webhook.failure"),
-		webhookSuccess: prov.NewCounter("discord.webhook.success"),
-		modForceCtr: prov.NewCounter("mod.force"),
+		webhookDuration:  prov.NewHistogram("discord.webhook.execution.ns", 50),
+		webhookFailure:   prov.NewCounter("discord.webhook.failure"),
+		webhookSuccess:   prov.NewCounter("discord.webhook.success"),
+		modForceCtr:      prov.NewCounter("mod.force"),
 	}
 	must := func(err error) {
 		if err != nil {
@@ -131,7 +134,7 @@ func main() {
 	}
 	ln.Log(ctx, ln.Action("opened discordgo websocket"))
 
-	ln.Log(ctx, ln.Action("waiting forever (and a day)"))
+	ln.Log(ctx, ln.Info("waiting for lines to proxy"), ln.F{"to_discord": true})
 	for {
 		select {}
 	}

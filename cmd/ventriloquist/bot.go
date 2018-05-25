@@ -24,8 +24,8 @@ type bot struct {
 	messageDeletions metrics.Counter
 	webhookDuration  metrics.Histogram
 	webhookFailure   metrics.Counter
-	webhookSuccess metrics.Counter
-	modForceCtr         metrics.Counter
+	webhookSuccess   metrics.Counter
+	modForceCtr      metrics.Counter
 }
 
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
@@ -369,9 +369,18 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
+		f["to_discord"] = true
 		ln.Error(context.Background(), err, f, ln.Action("deleting original message"))
 		return
 	}
 	ln.Log(ctx, ln.Action("deleted message"), f)
 	b.messageDeletions.Add(1)
+
+	err = sendWebhook(b.cfg.LoggingWebhook, dWebhook{
+		Content: fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, match.Body),
+		Username: "Ventriloquist Logging",
+	})
+	if err != nil {
+		ln.Error(ctx, err, f, ln.Info("can't send log message to discord"))
+	}
 }
