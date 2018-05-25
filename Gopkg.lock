@@ -8,10 +8,10 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/Xe/ln"
-  packages = ["."]
-  revision = "466e05b2ef3e48ce08a367b6aaac09ee29a124e5"
-  version = "v0.1"
+  packages = [".","opname"]
+  revision = "ae4f7456500d90115d357025137fc7ece5f6f5ef"
 
 [[projects]]
   branch = "master"
@@ -112,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "851a4224272ccf4d13157cd3801c77f50953618298bb1fecc839b168aa96c189"
+  inputs-digest = "ed280dae9705bb9d7aefc79ba8a66fb21310ddc89892a6ac8249d22d7b540479"
   solver-name = "gps-cdcl"
   solver-version = 1

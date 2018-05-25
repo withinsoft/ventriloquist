@@ -21,8 +21,8 @@
 
 
 [[constraint]]
+  branch = "master"
   name = "github.com/Xe/ln"
-  version = "0.1.0"
 
 [[constraint]]
   branch = "master"
