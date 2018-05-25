@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Xe/ln"
 	"github.com/bwmarrin/discordgo"
+	"github.com/go-kit/kit/metrics"
 	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
 
@@ -17,6 +19,13 @@ type bot struct {
 	cfg config
 	db  DB
 	dg  *discordgo.Session
+
+	proxiedLine      metrics.Counter
+	messageDeletions metrics.Counter
+	webhookDuration  metrics.Histogram
+	webhookFailure   metrics.Counter
+	webhookSuccess metrics.Counter
+	modForceCtr         metrics.Counter
 }
 
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
@@ -48,6 +57,7 @@ func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.
 		})
 		m.Author.ID = mts[0].ID // hack
 
+		b.modForceCtr.Add(1)
 		return doer(s, m, cparv)
 	}
 }
@@ -86,7 +96,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 	match := proxytag.Match{
 		Method: "Nameslash",
-		Name: name,
+		Name:   name,
 	}
 
 	if len(parv) > 3 {
@@ -111,7 +121,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		CoreDiscordID: m.Author.ID,
 		Name:          name,
 		AvatarURL:     aurl,
-		Match: match,
+		Match:         match,
 	}
 
 	ln.Log(context.Background(), ln.Action("adding systemmate"), ln.F{
@@ -124,7 +134,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: " + match.String() + ". Please use ;chproxy to customize this further.")
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+match.String()+". Please use ;chproxy to customize this further.")
 	return err
 }
 
@@ -318,6 +328,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	f["member_id"] = member.ID
 	f["member_name"] = member.Name
 	f["proxy_match"] = member.Match.String()
+	b.proxiedLine.Add(1)
 
 	wh, err := b.db.FindWebhook(m.ChannelID)
 	if err != nil {
@@ -346,11 +357,15 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		AvatarURL: member.AvatarURL,
 	}
 
+	t0 := time.Now()
 	err = sendWebhook(wh, dw)
 	if err != nil {
+		b.webhookFailure.Add(1)
 		ln.Error(context.Background(), err, f, ln.Action("sending webhook"))
 		return
 	}
+	b.webhookDuration.Observe(float64(time.Since(t0)))
+	b.webhookSuccess.Add(1)
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
@@ -358,4 +373,5 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	ln.Log(ctx, ln.Action("deleted message"), f)
+	b.messageDeletions.Add(1)
 }

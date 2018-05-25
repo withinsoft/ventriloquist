@@ -3,19 +3,23 @@ package main
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/Xe/ln"
 	"github.com/asdine/storm"
 	"github.com/bwmarrin/discordgo"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/graphite"
 	"github.com/joeshaw/envdecode"
 	_ "github.com/joho/godotenv/autoload"
 	bbot "github.com/withinsoft/ventriloquist/internal/bot"
 )
 
 type config struct {
-	DiscordToken string `env:"DISCORD_TOKEN,required"`
-	DBPath       string `env:"DB_PATH,default=var/vent.db"`
-	AdminRole    string `env:"ADMIN_ROLE,required"`
+	DiscordToken   string `env:"DISCORD_TOKEN,required"`
+	DBPath         string `env:"DB_PATH,default=var/vent.db"`
+	AdminRole      string `env:"ADMIN_ROLE,required"`
+	GraphiteServer string `env:"GRAPHITE_SERVER,required"`
 }
 
 func main() {
@@ -31,6 +35,11 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+
+	lg := log.NewLogfmtLogger(os.Stdout)
+	prov := graphite.New("ventriloquist.", lg)
+	go prov.SendLoop(time.Tick(time.Second), "tcp", cfg.GraphiteServer)
+	ln.Log(ctx, ln.Action("created metrics client"), ln.F{"address": cfg.GraphiteServer, "protocol": "graphite+tcp"})
 
 	dg, err := discordgo.New("Bot " + cfg.DiscordToken)
 	if err != nil {
@@ -48,6 +57,13 @@ func main() {
 		cfg: cfg,
 		db:  DB{s: db},
 		dg:  dg,
+
+		proxiedLine: prov.NewCounter("discord.messages.proxied.line"),
+		messageDeletions: prov.NewCounter("discord.messages.deleted"),
+		webhookDuration: prov.NewHistogram("discord.webhook.execution.ns", 50),
+		webhookFailure: prov.NewCounter("discord.webhook.failure"),
+		webhookSuccess: prov.NewCounter("discord.webhook.success"),
+		modForceCtr: prov.NewCounter("mod.force"),
 	}
 	must := func(err error) {
 		if err != nil {
@@ -57,7 +73,7 @@ func main() {
 	cs := bbot.NewCommandSet()
 	cs.Prefix = ";"
 
-	must(cs.AddCmd("add", "adds a systemmate to the list of proxy tags", bbot.NoPermissions, b.addSystemmate))
+	must(cs.AddCmd("add", "adds a systemmate and optionally their proxy tags", bbot.NoPermissions, b.addSystemmate))
 	must(cs.AddCmd("list", "lists systemmates", bbot.NoPermissions, b.listSystemmates))
 	must(cs.AddCmd("update", "updates systemmates avatars and optionally name", bbot.NoPermissions, b.updateAvatar))
 	must(cs.AddCmd("del", "removes a systemmate", bbot.NoPermissions, b.delSystemmate))
@@ -89,15 +105,22 @@ func main() {
 	)))
 	ln.Log(ctx, ln.Action("added commands to mux"))
 
+	messageCtr := prov.NewCounter("discord.messages.processed")
+	botMessageCtr := prov.NewCounter("discord.bot.messages")
+	cmdExecDuration := prov.NewHistogram("command.handler.exec.ns", 50)
 	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		messageCtr.Add(1)
 		if m.Author.Bot {
+			botMessageCtr.Add(1)
 			return
 		}
 
+		st := time.Now()
 		err := cs.Run(s, m.Message)
 		if err != nil {
 			ln.Error(context.Background(), err)
 		}
+		cmdExecDuration.Observe(float64(time.Since(st)))
 	})
 	dg.AddHandler(b.proxyScrape)
 	ln.Log(ctx, ln.Action("added discordgo handlers"))
