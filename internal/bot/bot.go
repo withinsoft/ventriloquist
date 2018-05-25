@@ -115,6 +115,7 @@ func NewCommandSet() *CommandSet {
 		Prefix: DefaultPrefix,
 	}
 
+	cs.AddCmd("source", "Source code link", NoPermissions, source)
 	cs.AddCmd("help", "Shows help for the bot", NoPermissions, cs.help)
 
 	return cs
