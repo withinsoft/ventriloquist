@@ -2,18 +2,24 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Xe/ln"
 	"github.com/Xe/uuid"
 	"github.com/asdine/storm"
+	"github.com/golang/groupcache"
 	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
 
 type DB struct {
 	s *storm.DB
+
+	systemmateCache *groupcache.Group
 }
 
 type Systemmate struct {
@@ -56,6 +62,42 @@ func (d DB) UpdateSystemmate(s Systemmate) error {
 }
 
 func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
+	var bs []byte
+	sink := groupcache.AllocatingByteSliceSink(&bs)
+	key := filepath.Join(time.Now().Round(time.Second).Format(time.RFC3339), id)
+
+	err := d.systemmateCache.Get(nil, key, sink)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []Systemmate
+	err = json.Unmarshal(bs, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (d DB) cacheSystemmates(ctx groupcache.Context, key string, dest groupcache.Sink) error {
+	did := filepath.Base(key)
+
+	sms, err := d.findSystemmates(did)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(&sms)
+	if err != nil {
+		return err
+	}
+
+	dest.SetBytes(data)
+	return nil
+}
+
+func (d DB) findSystemmates(id string) ([]Systemmate, error) {
 	var result []Systemmate
 	err := d.s.Find("CoreDiscordID", id, &result)
 	if err != nil {
@@ -113,7 +155,7 @@ func (d DB) NukeSystem(coreDiscordID string) error {
 		})
 
 		for _, err := range errs {
-			ln.Error(ctx, err)
+			ln.Error(ctx, err, ln.F{"to_discord": true})
 		}
 
 		return errors.New("error in deletion, contact the bot admin")

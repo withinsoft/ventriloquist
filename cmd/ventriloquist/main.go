@@ -10,6 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/graphite"
+	"github.com/golang/groupcache"
 	"github.com/joeshaw/envdecode"
 	_ "github.com/joho/godotenv/autoload"
 	bbot "github.com/withinsoft/ventriloquist/internal/bot"
@@ -56,10 +57,13 @@ func main() {
 	}
 	ln.Log(ctx, ln.Action("database opened"))
 
+	const fiftyMegs = 1024 * 1024 * 50
 	b := bot{
 		cfg: cfg,
-		db:  DB{s: db},
-		dg:  dg,
+		db: DB{
+			s: db,
+		},
+		dg: dg,
 
 		proxiedLine:      prov.NewCounter("discord.messages.proxied.line"),
 		messageDeletions: prov.NewCounter("discord.messages.deleted"),
@@ -68,6 +72,9 @@ func main() {
 		webhookSuccess:   prov.NewCounter("discord.webhook.success"),
 		modForceCtr:      prov.NewCounter("mod.force"),
 	}
+
+	b.db.systemmateCache = groupcache.NewGroup("systemmates", fiftyMegs, groupcache.GetterFunc(b.db.cacheSystemmates))
+
 	must := func(err error) {
 		if err != nil {
 			ln.FatalErr(ctx, err)
@@ -82,6 +89,7 @@ func main() {
 	must(cs.AddCmd("del", "removes a systemmate", bbot.NoPermissions, b.delSystemmate))
 	must(cs.AddCmd("nuke", "removes all system data", bbot.NoPermissions, b.nukeSystem))
 	must(cs.AddCmd("chproxy", "changes proxy method for a systemmate", bbot.NoPermissions, b.changeProxy))
+	must(cs.AddCmd("export", "exports a copy of all of your data (GDPR compliance)", bbot.NoPermissions, b.export))
 	must(cs.AddCmd("mod_list", "mod: lists systemmates for a user", b.modOnly, b.modForce(
 		"list",
 		"usage: ;mod_list <mention the user>\n\n(don't include the angle brackets)",

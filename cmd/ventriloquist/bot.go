@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -281,6 +283,46 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 	return err
 }
 
+func (b bot) export(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	sms, err := b.db.FindSystemmates(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	buf := bytes.NewBuffer(nil)
+
+	e := json.NewEncoder(buf)
+	e.SetIndent("", "\t")
+	err = e.Encode(sms)
+	if err != nil {
+		return err
+	}
+
+	ms := &discordgo.MessageSend{
+		Content: "Here is your data in JSON format. To remove all of your data, see `;nuke`.",
+		Files: []*discordgo.File{
+			&discordgo.File{
+				Name:        m.Author.ID + ".json",
+				ContentType: "application/json",
+				Reader:      buf,
+			},
+		},
+	}
+	msg, err := s.ChannelMessageSendComplex(m.ChannelID, ms)
+	if err != nil {
+		return err
+	}
+
+	ln.Log(context.Background(), ln.Info("user data exported"), ln.F{
+		"to_discord": true,
+		"author_id":  m.Author.ID,
+		"message_id": msg.ID,
+		"channel_id": m.ChannelID,
+	})
+
+	return nil
+}
+
 func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -377,7 +419,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	b.messageDeletions.Add(1)
 
 	err = sendWebhook(b.cfg.LoggingWebhook, dWebhook{
-		Content: fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, match.Body),
+		Content:  fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, match.Body),
 		Username: "Ventriloquist Logging",
 	})
 	if err != nil {
