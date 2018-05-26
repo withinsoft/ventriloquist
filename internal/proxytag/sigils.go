@@ -3,7 +3,6 @@ package proxytag
 import (
 	"unicode"
   	"regexp"
-	"unicode/utf8"
 )
 
 // Shuck removes the first and last character of a string, analogous to
@@ -57,7 +56,7 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(lst) < 1 {
 		return Match{}, ErrNoMatch
 	}
-	if !isSigil(lst) {
+	if !isSigil(rune(lst[0])) {
 		return Match{}, ErrNoMatch
 	}
 	return Match{
@@ -86,7 +85,7 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(fst) < 1 {
 		return Match{}, ErrNoMatch
 	}
-	if !isSigil(fst[0]) {
+	if !isSigil(rune(fst[0])) {
 		return Match{}, ErrNoMatch
 	}
 
