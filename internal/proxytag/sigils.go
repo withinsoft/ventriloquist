@@ -50,7 +50,7 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-  var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
+  	var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
 	lst := endRegex.FindString(message)
 	body := message[:len(message)-1]
 	if len(lst) < 1 {
@@ -79,7 +79,7 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-  var startRegex = regexp.MustCompile(`^[^\w\s]*`)
+  	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
 	fst := startRegex.FindString(message)
 	body := message[1:]
 	if len(fst) < 1 {
