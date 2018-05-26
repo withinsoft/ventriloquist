@@ -1,16 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"strings"
-	"regexp"
-	
+  "regexp"
+  "time"
+  
 	"github.com/Xe/ln"
 	"github.com/bwmarrin/discordgo"
+	"github.com/go-kit/kit/metrics"
 	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
 
@@ -18,6 +22,13 @@ type bot struct {
 	cfg config
 	db  DB
 	dg  *discordgo.Session
+
+	proxiedLine      metrics.Counter
+	messageDeletions metrics.Counter
+	webhookDuration  metrics.Histogram
+	webhookFailure   metrics.Counter
+	webhookSuccess   metrics.Counter
+	modForceCtr      metrics.Counter
 }
 
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
@@ -49,6 +60,7 @@ func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.
 		})
 		m.Author.ID = mts[0].ID // hack
 
+		b.modForceCtr.Add(1)
 		return doer(s, m, cparv)
 	}
 }
@@ -87,7 +99,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 	match := proxytag.Match{
 		Method: "Nameslash",
-		Name: name,
+		Name:   name,
 	}
 
 	if len(parv) > 3 {
@@ -112,7 +124,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		CoreDiscordID: m.Author.ID,
 		Name:          name,
 		AvatarURL:     aurl,
-		Match: match,
+		Match:         match,
 	}
 
 	ln.Log(context.Background(), ln.Action("adding systemmate"), ln.F{
@@ -125,7 +137,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: " + match.String() + ". Please use ;chproxy to customize this further.")
+	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+match.String()+". Please use ;chproxy to customize this further.")
 	return err
 }
 
@@ -272,6 +284,46 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 	return err
 }
 
+func (b bot) export(s *discordgo.Session, m *discordgo.Message, parv []string) error {
+	sms, err := b.db.FindSystemmates(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	buf := bytes.NewBuffer(nil)
+
+	e := json.NewEncoder(buf)
+	e.SetIndent("", "\t")
+	err = e.Encode(sms)
+	if err != nil {
+		return err
+	}
+
+	ms := &discordgo.MessageSend{
+		Content: "Here is your data in JSON format. To remove all of your data, see `;nuke`.",
+		Files: []*discordgo.File{
+			&discordgo.File{
+				Name:        m.Author.ID + ".json",
+				ContentType: "application/json",
+				Reader:      buf,
+			},
+		},
+	}
+	msg, err := s.ChannelMessageSendComplex(m.ChannelID, ms)
+	if err != nil {
+		return err
+	}
+
+	ln.Log(context.Background(), ln.Info("user data exported"), ln.F{
+		"to_discord": true,
+		"author_id":  m.Author.ID,
+		"message_id": msg.ID,
+		"channel_id": m.ChannelID,
+	})
+
+	return nil
+}
+
 func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -319,6 +371,7 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	f["member_id"] = member.ID
 	f["member_name"] = member.Name
 	f["proxy_match"] = member.Match.String()
+	b.proxiedLine.Add(1)
 
 	wh, err := b.db.FindWebhook(m.ChannelID)
 	if err != nil {
@@ -347,16 +400,30 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		AvatarURL: member.AvatarURL,
 	}
 
+	t0 := time.Now()
 	err = sendWebhook(wh, dw)
 	if err != nil {
+		b.webhookFailure.Add(1)
 		ln.Error(context.Background(), err, f, ln.Action("sending webhook"))
 		return
 	}
+	b.webhookDuration.Observe(float64(time.Since(t0)))
+	b.webhookSuccess.Add(1)
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
+		f["to_discord"] = true
 		ln.Error(context.Background(), err, f, ln.Action("deleting original message"))
 		return
 	}
 	ln.Log(ctx, ln.Action("deleted message"), f)
+	b.messageDeletions.Add(1)
+
+	err = sendWebhook(b.cfg.LoggingWebhook, dWebhook{
+		Content:  fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, match.Body),
+		Username: "Ventriloquist Logging",
+	})
+	if err != nil {
+		ln.Error(ctx, err, f, ln.Info("can't send log message to discord"))
+	}
 }
