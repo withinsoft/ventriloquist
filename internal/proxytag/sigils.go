@@ -2,7 +2,7 @@ package proxytag
 
 import (
 	"unicode"
-  "regexp"
+  	"regexp"
 	"unicode/utf8"
 )
 
