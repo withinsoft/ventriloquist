@@ -51,7 +51,7 @@ func HalfSigilEnd(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
   	var endRegex = regexp.MustCompile(`^[^\w\s]*`)
-	lst := Reverse(re.FindStringSubmatch(Reverse(message))[0])
+	lst := Reverse(endRegex.FindStringSubmatch(Reverse(message))[0])
 	body := message[:len(message)-len(lst)]
 	if len(lst) < 1 {
 		return Match{}, ErrNoMatch
