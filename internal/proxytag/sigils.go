@@ -50,9 +50,9 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-  	var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
-	lst := endRegex.FindString(message)
-	body := message[:len(message)-1]
+  	var endRegex = regexp.MustCompile(`^[^\w\s]*`)
+	lst := Reverse(re.FindStringSubmatch(Reverse(message))[0])
+	body := message[:len(message)-len(lst)]
 	if len(lst) < 1 {
 		return Match{}, ErrNoMatch
 	}
@@ -134,3 +134,11 @@ func Sigils(message string) (Match, error) {
 		Body:         body,
 	}, nil
 }
+func Reverse(s string) string {
+    var reverse string
+    for i := len(s)-1; i >= 0; i-- {
+        reverse += string(s[i])
+    }
+    return reverse 
+}
+
