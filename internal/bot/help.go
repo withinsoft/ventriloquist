@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -20,8 +21,16 @@ func (cs *CommandSet) help(s *discordgo.Session, m *discordgo.Message, parv []st
 
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> check direct messages, help is there!", m.Author.ID))
 
-	default:
-		return ErrParvCountMismatch
+	case 2:
+		verb := parv[1]
+
+		cmd, ok := cs.cmds[strings.ToLower(verb)]
+		if !ok {
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> that command is unknown to me", m.Author.ID))
+			return nil
+		}
+
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> help for %s: %s", m.Author.ID, cmd.Verb(), cmd.Helptext()))
 	}
 
 	return nil

@@ -9,16 +9,81 @@ func TestShuck(t *testing.T) {
 	}
 }
 
-func TestIsSigil(t *testing.T) {
-	cases := []rune{
-		'[',
-		'$',
+func TestLastRune(t *testing.T) {
+	cases := []struct {
+		inp string
+		out rune
+	}{
+		{}, // nothing should be nothing
+		{
+			inp: "hi",
+			out: 'i',
+		},
+		{
+			inp: "你好",
+			out: '好',
+		},
 	}
 
 	for _, cs := range cases {
-		t.Run(string(cs), func(t *testing.T) {
-			if !isSigil(cs) {
-				t.Fatalf("not sigil: %s", string(cs))
+		t.Run(cs.inp, func(t *testing.T) {
+			result := lastRune(cs.inp)
+			if result != cs.out {
+				t.Fatalf("wanted: %s, got: %s", string(cs.out), string(result))
+			}
+		})
+	}
+}
+
+func TestFirstRune(t *testing.T) {
+	cases := []struct {
+		inp string
+		out rune
+	}{
+		{}, // nothing should be nothing
+		{
+			inp: "hi",
+			out: 'h',
+		},
+		{
+			inp: "你好",
+			out: '你',
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.inp, func(t *testing.T) {
+			result := firstRune(cs.inp)
+			if result != cs.out {
+				t.Fatalf("wanted: %s, got: %s", string(cs.out), string(result))
+			}
+		})
+	}
+}
+
+func TestIsSigil(t *testing.T) {
+	cases := []struct {
+		inp  rune
+		good bool
+	}{
+		{
+			inp:  '[',
+			good: true,
+		},
+		{
+			inp:  '$',
+			good: true,
+		},
+		{
+			inp:  ';',
+			good: false,
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(string(cs.inp), func(t *testing.T) {
+			if result := isSigil(cs.inp); result != cs.good {
+				t.Fatalf("wanted %v for %s, got: %v", cs.good, string(cs.inp), result)
 			}
 		})
 	}
@@ -54,8 +119,8 @@ func TestHalfSigilStart(t *testing.T) {
 			input: "[ <@72838115944828928> test",
 			output: Match{
 				InitialSigil: "[",
-				Method: "HalfSigilStart",
-				Body: " <@72838115944828928> test",
+				Method:       "HalfSigilStart",
+				Body:         " <@72838115944828928> test",
 			},
 		},
 	}
@@ -131,6 +196,10 @@ func TestSigls(t *testing.T) {
 				Method:       "Sigils",
 				Body:         "memes",
 			},
+		},
+		{
+			input: "[ <@72838115944828928>",
+			err:   ErrNoMatch,
 		},
 	}
 

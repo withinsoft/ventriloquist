@@ -2,10 +2,16 @@
 
 
 [[projects]]
-  name = "github.com/Xe/ln"
+  name = "github.com/VividCortex/gohistogram"
   packages = ["."]
-  revision = "466e05b2ef3e48ce08a367b6aaac09ee29a124e5"
-  version = "v0.1"
+  revision = "51564d9861991fb0ad0f531c99ef602d0f9866e6"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/Xe/ln"
+  packages = [".","opname"]
+  revision = "ae4f7456500d90115d357025137fc7ece5f6f5ef"
 
 [[projects]]
   branch = "master"
@@ -15,16 +21,9 @@
 
 [[projects]]
   name = "github.com/asdine/storm"
-  packages = [
-    ".",
-    "codec",
-    "codec/json",
-    "index",
-    "internal",
-    "q"
-  ]
-  revision = "a86fa5e09c9c50a06416b08fd9acd4839fb2d62e"
-  version = "v2.1.0"
+  packages = [".","codec","codec/json","index","internal","q"]
+  revision = "bda68dab90fc908ee5dbccb36400edf4f54972d6"
+  version = "v2.1.1"
 
 [[projects]]
   name = "github.com/bwmarrin/discordgo"
@@ -37,6 +36,36 @@
   packages = ["."]
   revision = "583e8937c61f1af6513608ccc75c97b6abdf4ff9"
   version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/go-kit/kit"
+  packages = ["log","metrics","metrics/generic","metrics/graphite","metrics/internal/lv","util/conn"]
+  revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
+  version = "v0.7.0"
+
+[[projects]]
+  name = "github.com/go-logfmt/logfmt"
+  packages = ["."]
+  revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
+  version = "v0.3.0"
+
+[[projects]]
+  name = "github.com/go-stack/stack"
+  packages = ["."]
+  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
+  version = "v1.7.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/groupcache"
+  packages = [".","consistenthash","groupcachepb","lru","singleflight"]
+  revision = "24b0969c4cb722950103eed87108c8d291a8df00"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -52,12 +81,15 @@
 
 [[projects]]
   name = "github.com/joho/godotenv"
-  packages = [
-    ".",
-    "autoload"
-  ]
+  packages = [".","autoload"]
   revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
   version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/logfmt"
+  packages = ["."]
+  revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -68,34 +100,30 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "nacl/secretbox",
-    "poly1305",
-    "salsa20/salsa"
-  ]
-  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
+  packages = ["nacl/secretbox","poly1305","salsa20/salsa"]
+  revision = "a3beeb748656e13e54256fd2cde19e058f41f60f"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "61147c48b25b599e5b561d2e9c4f3e1ef489ca41"
+  revision = "dfa909b99c79129e1100513e5cd36307665e5723"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "c11f84a56e43e20a78cee75a7c034031ecf57d1f"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/time"
   packages = ["rate"]
-  revision = "26559e0f760e39c24d730d3224364aef164ee23f"
+  revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bb93ea863fe460d71afa9a4f0be477eee75883132c0cf01ba2b3a0dc21a21706"
+  inputs-digest = "97e2a290042cbea8de08070d65e156710a7d74ec0212f93b919895e631efd727"
   solver-name = "gps-cdcl"
   solver-version = 1

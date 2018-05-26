@@ -2,7 +2,8 @@ package proxytag
 
 import (
 	"unicode"
-	"regexp"
+  "regexp"
+	"unicode/utf8"
 )
 
 // Shuck removes the first and last character of a string, analogous to
@@ -20,6 +21,23 @@ func isSigil(inp rune) bool {
 	return unicode.IsSymbol(inp) || unicode.IsPunct(inp)
 }
 
+func firstRune(inp string) rune {
+	for _, rn := range inp {
+		return rn
+	}
+
+	return rune(0)
+}
+
+func lastRune(inp string) rune {
+	var result rune
+	for _, rn := range inp {
+		result = rn
+	}
+
+	return result
+}
+
 // HalfSigilStart parses the "half sigil at the start" method of proxy tagging.
 //
 // Given a message of the form:
@@ -33,7 +51,7 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-	var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
+  var endRegex = regexp.MustCompile(`^(?:\w+)([^\w\s]*)`)
 	lst := endRegex.FindString(message)
 	body := message[:len(message)-1]
 	if len(lst) < 1 {
@@ -62,7 +80,7 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
+  var startRegex = regexp.MustCompile(`^[^\w\s]*`)
 	fst := startRegex.FindString(message)
 	body := message[1:]
 	if len(fst) < 1 {
@@ -93,9 +111,14 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	fst := rune(message[0])
-	lst := rune(message[len(message)-1])
+	fst := firstRune(message)
+	lst := lastRune(message)
 	body := Shuck(message)
+
+	// prevent mistakes like `[ <@72838115944828928>` being mis-read
+	if fst != '<' && lst == '>' {
+		return Match{}, ErrNoMatch
+	}
 
 	if !isSigil(fst) {
 		return Match{}, ErrNoMatch
