@@ -51,6 +51,12 @@ func main() {
 	}
 	ln.Log(ctx, ln.Action("discordgo session created"))
 
+	must := func(err error) {
+		if err != nil {
+			ln.FatalErr(ctx, err)
+		}
+	}
+
 	db, err := storm.Open(cfg.DBPath)
 	if err != nil {
 		ln.FatalErr(ctx, err)
@@ -75,11 +81,6 @@ func main() {
 
 	b.db.systemmateCache = groupcache.NewGroup("systemmates", fiftyMegs, groupcache.GetterFunc(b.db.cacheSystemmates))
 
-	must := func(err error) {
-		if err != nil {
-			ln.FatalErr(ctx, err)
-		}
-	}
 	cs := bbot.NewCommandSet()
 	cs.Prefix = ";"
 
@@ -140,6 +141,7 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
+	must(dg.UpdateStatus(0, "memcpy in the cloud"))
 	ln.Log(ctx, ln.Action("opened discordgo websocket"))
 
 	ln.Log(ctx, ln.Info("waiting for lines to proxy"), ln.F{"to_discord": true})
