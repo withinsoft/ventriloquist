@@ -3,7 +3,7 @@ package proxytag
 import "testing"
 
 func TestShuck(t *testing.T) {
-	s := Shuck("[memes]")
+	s := Shuck("[memes]",1,1)
 	if s != "memes" {
 		t.Fatalf("wanted memes, got: %v", s)
 	}
