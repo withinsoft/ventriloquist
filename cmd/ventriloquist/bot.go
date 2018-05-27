@@ -30,7 +30,7 @@ type bot struct {
 	webhookSuccess   metrics.Counter
 	modForceCtr      metrics.Counter
 }
-var re = regexp.MustCompile("[^`~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+")
+var re = regexp.MustCompile(`[^\x60~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+`)
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
 
 func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
