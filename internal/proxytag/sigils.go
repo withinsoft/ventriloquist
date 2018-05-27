@@ -5,10 +5,11 @@ import (
   	"regexp"
 )
 
-// Shuck removes the first and last character of a string, analogous to
+// 
+removes the first and last character of a string, analogous to
 // shucking off the husk of an ear of corn.
-func Shuck(victim string) string {
-	return victim[1 : len(victim)-1]
+func Shuck(victim string,firstlen int,lastlen int) string {
+	return victim[firstlen: len(victim)-lastlen]
 }
 
 func isSigil(inp rune) bool {
@@ -110,8 +111,22 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	fst := firstRune(message)
-	lst := lastRune(message)
+	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
+	fst := startRegex.FindString(message)
+	if len(fst) < 1 {
+		return Match{}, ErrNoMatch
+	}
+	if !isSigil(rune(fst[0])) {
+		return Match{}, ErrNoMatch
+	}
+	
+	lst := Reverse(startRegex.FindStringSubmatch(Reverse(message))[0])
+	if len(lst) < 1 {
+		return Match{}, ErrNoMatch
+	}
+	if !isSigil(rune(lst[0])) {
+		return Match{}, ErrNoMatch
+	}
 	body := Shuck(message)
 
 	// prevent mistakes like `[ <@72838115944828928>` being mis-read
@@ -119,13 +134,6 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	if !isSigil(fst) {
-		return Match{}, ErrNoMatch
-	}
-
-	if !isSigil(lst) {
-		return Match{}, ErrNoMatch
-	}
 
 	return Match{
 		InitialSigil: string(fst),
