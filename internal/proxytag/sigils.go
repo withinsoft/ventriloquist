@@ -81,7 +81,7 @@ func HalfSigilStart(message string) (Match, error) {
 	}
   	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
 	fst := startRegex.FindString(message)
-	body := message[:len(fst)]
+	body := message[len(fst):]
 	if len(fst) < 1 {
 		return Match{}, ErrNoMatch
 	}
