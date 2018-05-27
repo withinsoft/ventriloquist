@@ -134,7 +134,7 @@ func Sigils(message string) (Match, error) {
 	body := Shuck(message,len(fst),len(lst))
 
 	// prevent mistakes like `[ <@72838115944828928>` being mis-read
-	if fst != '<' && lst == '>' {
+	if fst[0] != '<' && lst[0] == '>' {
 		return Match{}, ErrNoMatch
 	}
 
