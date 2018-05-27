@@ -131,7 +131,7 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 	
-	body := Shuck(message,len(fst),len(lst)
+	body := Shuck(message,len(fst),len(lst))
 
 	// prevent mistakes like `[ <@72838115944828928>` being mis-read
 	if fst != '<' && lst == '>' {
@@ -147,10 +147,10 @@ func Sigils(message string) (Match, error) {
 	}, nil
 }
 func Reverse(s string) string {
-    var reverse string
-    for i := len(s)-1; i >= 0; i-- {
-        reverse += string(s[i])
+    runes := []rune(s)
+    for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+        runes[i], runes[j] = runes[j], runes[i]
     }
-    return reverse 
+    return string(runes)
 }
 
