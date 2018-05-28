@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
- 	"regexp"
- 	"time"
-  
+	"time"
+
 	"github.com/Xe/ln"
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-kit/kit/metrics"
@@ -30,7 +31,9 @@ type bot struct {
 	webhookSuccess   metrics.Counter
 	modForceCtr      metrics.Counter
 }
+
 var re = regexp.MustCompile(`[^\x60~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+`)
+
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
 
 func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
@@ -86,16 +89,44 @@ func (b bot) modOnly(s *discordgo.Session, m *discordgo.Message, parv []string) 
 	return errors.New("not authorized")
 }
 
+func checkAvatarURL(aurl string) error {
+	avatar_url, err := url.Parse(aurl)
+	if err != nil {
+		return fmt.Errorf("can't parse avatar url: %v", err)
+	}
+
+	if !strings.HasPrefix(avatar_url.Scheme, "http") {
+		return errors.New("must be a http:// url or https:// url")
+	}
+
+	req, err := http.NewRequest("HEAD", aurl, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "image/") {
+		return fmt.Errorf("This is not an image. It is Content-Type: %s", ct)
+	}
+
+	return nil
+}
+
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
 		return errors.New("usage: ;add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
 	}
-	
+
 	name := re.FindString(parv[1])
 	aurl := parv[2]
-	_, err := url.Parse(aurl)
-	if err != nil {
-		return fmt.Errorf("can't parse avatar url: %v", err)
+	var err error
+
+	if err := checkAvatarURL(aurl); err != nil {
+		return err
 	}
 
 	match := proxytag.Match{
@@ -196,6 +227,10 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 	_, err := url.Parse(aurl)
 	if err != nil {
 		return fmt.Errorf("can't parse avatar url: %v", err)
+	}
+
+	if err = checkAvatarURL(aurl); err != nil {
+		return err
 	}
 
 	members, err := b.db.FindSystemmates(m.Author.ID)
