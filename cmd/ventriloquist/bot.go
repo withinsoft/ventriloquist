@@ -9,8 +9,9 @@ import (
 	"log"
 	"net/url"
 	"strings"
-	"time"
-
+ 	"regexp"
+ 	"time"
+  
 	"github.com/Xe/ln"
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-kit/kit/metrics"
@@ -29,7 +30,7 @@ type bot struct {
 	webhookSuccess   metrics.Counter
 	modForceCtr      metrics.Counter
 }
-
+var re = regexp.MustCompile(`[^\x60~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+`)
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
 
 func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
@@ -89,8 +90,8 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 	if len(parv) < 3 {
 		return errors.New("usage: ;add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
 	}
-
-	name := parv[1]
+	
+	name := re.FindString(parv[1])
 	aurl := parv[2]
 	_, err := url.Parse(aurl)
 	if err != nil {
@@ -148,7 +149,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 		return errors.New("usage: ;chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
 	}
 
-	name := parv[1]
+	name := re.FindString(parv[1])
 	line := strings.Join(parv[2:], " ")
 	match, err := proxytag.Parse(line, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
 	if err != nil {
@@ -190,7 +191,7 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 		return errors.New("usage: ;update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
 	}
 
-	name := parv[1]
+	name := re.FindString(parv[1])
 	aurl := parv[2]
 	_, err := url.Parse(aurl)
 	if err != nil {
@@ -215,7 +216,7 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 	mm.AvatarURL = aurl
 
 	if len(parv) == 4 {
-		newName := parv[3]
+		newName := re.FindString(parv[3])
 		mm.Name = newName
 	}
 
@@ -253,7 +254,7 @@ func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return errors.New("usage: ;del <name>\n\n(don't include the angle brackets)")
 	}
 
-	name := parv[1]
+	name := re.FindString(parv[1])
 	err := b.db.DeleteSystemmate(m.Author.ID, name)
 	if err != nil {
 		return err
