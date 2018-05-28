@@ -1,4 +1,3 @@
-B
 # Usage
 
 ## Installing
