@@ -205,6 +205,15 @@ func TestSigls(t *testing.T) {
 			},
 		},
 		{
+			input: "[[memes]]",
+			output: Match{
+				InitialSigil: "[[",
+				EndSigil:     "]]",
+				Method:       "Sigils",
+				Body:         "memes",
+			},
+		},
+		{
 			input: "$memes$",
 			output: Match{
 				InitialSigil: "$",
