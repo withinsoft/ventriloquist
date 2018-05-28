@@ -98,6 +98,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/rakyll/statik"
+  packages = ["fs"]
+  revision = "fd36b3595eb2ec8da4b8153b107f7ea08504899d"
+  version = "v0.1.1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["nacl/secretbox","poly1305","salsa20/salsa"]
@@ -124,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "97e2a290042cbea8de08070d65e156710a7d74ec0212f93b919895e631efd727"
+  inputs-digest = "55b88487870a59ca8b90e4f79accf64de8bc3afc4ceaba40615117f8bc17b59d"
   solver-name = "gps-cdcl"
   solver-version = 1

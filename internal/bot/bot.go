@@ -3,13 +3,14 @@ package bot
 import (
 	"errors"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/bwmarrin/discordgo"
+	"github.com/rakyll/statik/fs"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -103,7 +104,8 @@ func NewBasicCommand(verb, helptext string, permissions, handler Handler) Comman
 // CommandSet is a group of bot commands similar to an http.ServeMux.
 type CommandSet struct {
 	sync.Mutex
-	cmds map[string]CommandHandler
+	cmds   map[string]CommandHandler
+	helpFS http.FileSystem
 
 	Prefix string
 }
@@ -114,6 +116,13 @@ func NewCommandSet() *CommandSet {
 		cmds:   map[string]CommandHandler{},
 		Prefix: DefaultPrefix,
 	}
+
+	sfs, err := fs.New()
+	if err != nil {
+		panic(err)
+	}
+
+	cs.helpFS = sfs
 
 	cs.AddCmd("source", "Source code link", NoPermissions, source)
 	cs.AddCmd("help", "Shows help for the bot", NoPermissions, cs.help)
