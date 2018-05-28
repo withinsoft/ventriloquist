@@ -57,6 +57,7 @@ func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.
 			"mod_username": m.Author.Username + "#" + m.Author.Discriminator,
 			"mod_id":       m.Author.ID,
 			"channel":      m.ChannelID,
+			"to_discord":   true,
 		})
 		m.Author.ID = mts[0].ID // hack
 
