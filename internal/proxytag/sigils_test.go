@@ -3,7 +3,7 @@ package proxytag
 import "testing"
 
 func TestShuck(t *testing.T) {
-	s := Shuck("[memes]",1,1)
+	s := Shuck("[memes]", 1, 1)
 	if s != "memes" {
 		t.Fatalf("wanted memes, got: %v", s)
 	}
@@ -119,8 +119,8 @@ func TestHalfSigilStart(t *testing.T) {
 			input: "[[memes",
 			output: Match{
 				InitialSigil: "[[",
-				Method: "HalfSigilStart",
-				Body: "memes",
+				Method:       "HalfSigilStart",
+				Body:         "memes",
 			},
 		},
 		{
@@ -169,8 +169,8 @@ func TestHalfSigilEnd(t *testing.T) {
 			input: "memes]]",
 			output: Match{
 				EndSigil: "]]",
-				Method: "HalfSigilEnd",
-				Body: "memes",
+				Method:   "HalfSigilEnd",
+				Body:     "memes",
 			},
 		},
 	}

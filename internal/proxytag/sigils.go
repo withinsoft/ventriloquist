@@ -1,19 +1,22 @@
 package proxytag
 
 import (
+	"regexp"
 	"unicode"
-  	"regexp"
 )
 
 // removes the first and last character of a string, analogous to
 // shucking off the husk of an ear of corn.
-func Shuck(victim string,firstlen int,lastlen int) string {
-	return victim[firstlen: len(victim)-lastlen]
+func Shuck(victim string, firstlen int, lastlen int) string {
+	return victim[firstlen : len(victim)-lastlen]
 }
 
 func isSigil(inp rune) bool {
 	switch inp {
 	case ';', '.', '?', '!':
+		return false
+	// discord formatting characters
+	case '*', '_', '<', '>', '~':
 		return false
 	}
 
@@ -50,7 +53,7 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-  	var endRegex = regexp.MustCompile(`^[^\w\s]*`)
+	var endRegex = regexp.MustCompile(`^[^\w\s]*`)
 	lst := Reverse(endRegex.FindStringSubmatch(Reverse(message))[0])
 	body := message[:len(message)-len(lst)]
 	if len(lst) < 1 {
@@ -79,7 +82,7 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-  	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
+	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
 	fst := startRegex.FindString(message)
 	body := message[len(fst):]
 	if len(fst) < 1 {
@@ -112,32 +115,31 @@ func Sigils(message string) (Match, error) {
 
 	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
 	fst := startRegex.FindString(message)
-	
+
 	if len(fst) < 1 {
 		return Match{}, ErrNoMatch
 	}
-	
+
 	if !isSigil(rune(fst[0])) {
 		return Match{}, ErrNoMatch
 	}
-	
+
 	lst := Reverse(startRegex.FindStringSubmatch(Reverse(message))[0])
-	
+
 	if len(lst) < 1 {
 		return Match{}, ErrNoMatch
 	}
-	
+
 	if !isSigil(rune(lst[0])) {
 		return Match{}, ErrNoMatch
 	}
-	
-	body := Shuck(message,len(fst),len(lst))
+
+	body := Shuck(message, len(fst), len(lst))
 
 	// prevent mistakes like `[ <@72838115944828928>` being mis-read
 	if fst[0] != '<' && lst[0] == '>' {
 		return Match{}, ErrNoMatch
 	}
-
 
 	return Match{
 		InitialSigil: string(fst),
@@ -147,10 +149,9 @@ func Sigils(message string) (Match, error) {
 	}, nil
 }
 func Reverse(s string) string {
-    runes := []rune(s)
-    for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-        runes[i], runes[j] = runes[j], runes[i]
-    }
-    return string(runes)
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }
-
