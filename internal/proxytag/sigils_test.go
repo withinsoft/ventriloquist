@@ -2,65 +2,6 @@ package proxytag
 
 import "testing"
 
-func TestShuck(t *testing.T) {
-	s := Shuck("[memes]", 1, 1)
-	if s != "memes" {
-		t.Fatalf("wanted memes, got: %v", s)
-	}
-}
-
-func TestLastRune(t *testing.T) {
-	cases := []struct {
-		inp string
-		out rune
-	}{
-		{}, // nothing should be nothing
-		{
-			inp: "hi",
-			out: 'i',
-		},
-		{
-			inp: "你好",
-			out: '好',
-		},
-	}
-
-	for _, cs := range cases {
-		t.Run(cs.inp, func(t *testing.T) {
-			result := lastRune(cs.inp)
-			if result != cs.out {
-				t.Fatalf("wanted: %s, got: %s", string(cs.out), string(result))
-			}
-		})
-	}
-}
-
-func TestFirstRune(t *testing.T) {
-	cases := []struct {
-		inp string
-		out rune
-	}{
-		{}, // nothing should be nothing
-		{
-			inp: "hi",
-			out: 'h',
-		},
-		{
-			inp: "你好",
-			out: '你',
-		},
-	}
-
-	for _, cs := range cases {
-		t.Run(cs.inp, func(t *testing.T) {
-			result := firstRune(cs.inp)
-			if result != cs.out {
-				t.Fatalf("wanted: %s, got: %s", string(cs.out), string(result))
-			}
-		})
-	}
-}
-
 func TestIsSigil(t *testing.T) {
 	cases := []struct {
 		inp  rune

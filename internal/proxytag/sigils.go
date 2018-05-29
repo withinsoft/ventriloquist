@@ -4,12 +4,6 @@ import (
 	"unicode"
 )
 
-// removes the first and last character of a string, analogous to
-// shucking off the husk of an ear of corn.
-func Shuck(victim string, firstlen int, lastlen int) string {
-	return victim[firstlen : len(victim)-lastlen]
-}
-
 func isSigil(inp rune) bool {
 	switch inp {
 	// english formatting characters
@@ -53,23 +47,6 @@ func tailSigils(inp string) (string, string) {
 	}
 
 	return Reverse(string(sigils)), Reverse(string(result))
-}
-
-func firstRune(inp string) rune {
-	for _, rn := range inp {
-		return rn
-	}
-
-	return rune(0)
-}
-
-func lastRune(inp string) rune {
-	var result rune
-	for _, rn := range inp {
-		result = rn
-	}
-
-	return result
 }
 
 // HalfSigilStart parses the "half sigil at the start" method of proxy tagging.
