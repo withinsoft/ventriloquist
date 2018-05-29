@@ -1,7 +1,6 @@
 package proxytag
 
 import (
-	"regexp"
 	"unicode"
 )
 
@@ -13,7 +12,8 @@ func Shuck(victim string, firstlen int, lastlen int) string {
 
 func isSigil(inp rune) bool {
 	switch inp {
-	case ';', '.', '?', '!':
+	// english formatting characters
+	case ';', '.', '?', '!', ',', '-':
 		return false
 	// discord formatting characters
 	case '*', '_', '<', '>', '~':
@@ -21,6 +21,38 @@ func isSigil(inp rune) bool {
 	}
 
 	return unicode.IsSymbol(inp) || unicode.IsPunct(inp)
+}
+
+func leadSigils(inp string) (string, string) {
+	var sigils []rune
+	var result []rune
+	caught := false
+	for _, r := range inp {
+		if !caught && isSigil(r) {
+			sigils = append(sigils, r)
+		} else {
+			caught = true
+			result = append(result, r)
+		}
+	}
+
+	return string(sigils), string(result)
+}
+
+func tailSigils(inp string) (string, string) {
+	var sigils []rune
+	var result []rune
+	caught := false
+	for _, r := range Reverse(inp) {
+		if !caught && isSigil(r) {
+			sigils = append(sigils, r)
+		} else {
+			caught = true
+			result = append(result, r)
+		}
+	}
+
+	return Reverse(string(sigils)), Reverse(string(result))
 }
 
 func firstRune(inp string) rune {
@@ -53,17 +85,14 @@ func HalfSigilEnd(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-	var endRegex = regexp.MustCompile(`^[^\w\s]*`)
-	lst := Reverse(endRegex.FindStringSubmatch(Reverse(message))[0])
-	body := message[:len(message)-len(lst)]
-	if len(lst) < 1 {
+
+	sigils, body := tailSigils(message)
+	if sigils == "" {
 		return Match{}, ErrNoMatch
 	}
-	if !isSigil(rune(lst[0])) {
-		return Match{}, ErrNoMatch
-	}
+
 	return Match{
-		EndSigil: string(lst),
+		EndSigil: sigils,
 		Method:   "HalfSigilEnd",
 		Body:     body,
 	}, nil
@@ -82,18 +111,14 @@ func HalfSigilStart(message string) (Match, error) {
 	if len(message) < 2 {
 		return Match{}, ErrNoMatch
 	}
-	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
-	fst := startRegex.FindString(message)
-	body := message[len(fst):]
-	if len(fst) < 1 {
-		return Match{}, ErrNoMatch
-	}
-	if !isSigil(rune(fst[0])) {
+
+	sigils, body := leadSigils(message)
+	if sigils == "" {
 		return Match{}, ErrNoMatch
 	}
 
 	return Match{
-		InitialSigil: string(fst),
+		InitialSigil: sigils,
 		Method:       "HalfSigilStart",
 		Body:         body,
 	}, nil
@@ -113,41 +138,22 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	var startRegex = regexp.MustCompile(`^[^\w\s]*`)
-	fst := startRegex.FindString(message)
+	startSigils, body1 := leadSigils(message)
+	endSigils, body := tailSigils(body1)
 
-	if len(fst) < 1 {
-		return Match{}, ErrNoMatch
-	}
-
-	if !isSigil(rune(fst[0])) {
-		return Match{}, ErrNoMatch
-	}
-
-	lst := Reverse(startRegex.FindStringSubmatch(Reverse(message))[0])
-
-	if len(lst) < 1 {
-		return Match{}, ErrNoMatch
-	}
-
-	if !isSigil(rune(lst[0])) {
-		return Match{}, ErrNoMatch
-	}
-
-	body := Shuck(message, len(fst), len(lst))
-
-	// prevent mistakes like `[ <@72838115944828928>` being mis-read
-	if fst[0] != '<' && lst[0] == '>' {
+	if startSigils == "" || endSigils == "" {
 		return Match{}, ErrNoMatch
 	}
 
 	return Match{
-		InitialSigil: string(fst),
-		EndSigil:     string(lst),
+		InitialSigil: startSigils,
+		EndSigil:     endSigils,
 		Method:       "Sigils",
 		Body:         body,
 	}, nil
 }
+
+// Reverse reverses a string rune by rune.
 func Reverse(s string) string {
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {

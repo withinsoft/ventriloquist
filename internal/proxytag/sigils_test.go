@@ -89,6 +89,78 @@ func TestIsSigil(t *testing.T) {
 	}
 }
 
+func TestLeadSigils(t *testing.T) {
+	cases := []struct {
+		inp          string
+		sigils, body string
+	}{
+		{
+			inp:  "hi",
+			body: "hi",
+		},
+		{
+			inp:    "[hi",
+			sigils: "[",
+			body:   "hi",
+		},
+		{
+			inp:    "[[[hi",
+			sigils: "[[[",
+			body:   "hi",
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.inp, func(t *testing.T) {
+			sigils, body := leadSigils(cs.inp)
+
+			if cs.sigils != sigils {
+				t.Fatalf("expected sigils to be %s, got: %s", cs.sigils, sigils)
+			}
+
+			if cs.body != body {
+				t.Fatalf("expected body to be %q, got: %q", cs.body, body)
+			}
+		})
+	}
+}
+
+func TestTailSigils(t *testing.T) {
+	cases := []struct {
+		inp          string
+		sigils, body string
+	}{
+		{
+			inp:  "hi",
+			body: "hi",
+		},
+		{
+			inp:    "hi]",
+			sigils: "]",
+			body:   "hi",
+		},
+		{
+			inp:    "hi]]]",
+			sigils: "]]]",
+			body:   "hi",
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.inp, func(t *testing.T) {
+			sigils, body := tailSigils(cs.inp)
+
+			if cs.sigils != sigils {
+				t.Fatalf("expected sigils to be %s, got: %s", cs.sigils, sigils)
+			}
+
+			if cs.body != body {
+				t.Fatalf("expected body to be %q, got: %q", cs.body, body)
+			}
+		})
+	}
+}
+
 func TestHalfSigilStart(t *testing.T) {
 	cases := []testCase{
 		{
@@ -192,10 +264,6 @@ func TestSigls(t *testing.T) {
 			err:   ErrNoMatch,
 		},
 		{
-			input: "[as",
-			err:   ErrNoMatch,
-		},
-		{
 			input: "[memes]",
 			output: Match{
 				InitialSigil: "[",
@@ -209,6 +277,15 @@ func TestSigls(t *testing.T) {
 			output: Match{
 				InitialSigil: "[[",
 				EndSigil:     "]]",
+				Method:       "Sigils",
+				Body:         "memes",
+			},
+		},
+		{
+			input: "[[[[memes]]]]",
+			output: Match{
+				InitialSigil: "[[[[",
+				EndSigil:     "]]]]",
 				Method:       "Sigils",
 				Body:         "memes",
 			},
