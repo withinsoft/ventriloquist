@@ -34,6 +34,13 @@ type bot struct {
 
 var re = regexp.MustCompile(`[^\x60~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+`)
 
+func deleteLater(s *discordgo.Session, dur time.Duration,  msgs ...*discordgo.Message) {
+	time.Sleep(dur)
+	for _, m := range msgs {
+		go s.ChannelMessageDelete(m.ChannelID, m.ID)
+	}
+}
+
 type cmd func(*discordgo.Session, *discordgo.Message, []string) error
 
 func (b bot) modForce(verb, help string, parvlen int, doer cmd) func(*discordgo.Session, *discordgo.Message, []string) error {
@@ -169,7 +176,10 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+match.String()+". Please use ;chproxy to customize this further.")
+	reply, err := s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+match.String()+". Please use ;chproxy to customize this further.")
+
+	go deleteLater(s, 30*time.Second, m, reply)
+
 	return err
 }
 
@@ -213,7 +223,8 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s now is set to use the following proxying settings: %s", name, match))
+	reply, err := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s now is set to use the following proxying settings: %s", name, match))
+	go deleteLater(s, 30*time.Second, m, reply)
 	return err
 }
 
@@ -260,10 +271,11 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
+	reply, err := s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
 	if err != nil {
 		return err
 	}
+	go deleteLater(s, 30*time.Second, m, reply)
 
 	return b.listSystemmates(s, m, parv)
 }
@@ -280,7 +292,8 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, m.Match))
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, sb.String())
+	reply, err := s.ChannelMessageSend(m.ChannelID, sb.String())
+	go deleteLater(s, 30*time.Second, m, reply)
 	return err
 }
 
@@ -295,7 +308,8 @@ func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
+	reply, err := s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
+	go deleteLater(s, 30 *time.Second, m, reply)
 	return err
 }
 
@@ -316,7 +330,8 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(m.ChannelID, "System deleted. Have a good day.")
+	reply, err := s.ChannelMessageSend(m.ChannelID, "System deleted. Have a good day.")
+	go deleteLater(s, 30*time.Second, m, reply)
 	return err
 }
 
@@ -345,7 +360,13 @@ func (b bot) export(s *discordgo.Session, m *discordgo.Message, parv []string) e
 			},
 		},
 	}
-	msg, err := s.ChannelMessageSendComplex(m.ChannelID, ms)
+
+	authorChannel, err := s.UserChannelCreate(m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	msg, err := s.ChannelMessageSendComplex(authorChannel.ID, ms)
 	if err != nil {
 		return err
 	}
@@ -356,6 +377,8 @@ func (b bot) export(s *discordgo.Session, m *discordgo.Message, parv []string) e
 		"message_id": msg.ID,
 		"channel_id": m.ChannelID,
 	})
+
+	go deleteLater(s, 30*time.Second, m)
 
 	return nil
 }
