@@ -30,8 +30,6 @@ func main() {
 		"in": "main",
 	})
 
-	_ = os.MkdirAll("var", 0700)
-
 	var cfg config
 	err := envdecode.StrictDecode(&cfg)
 	if err != nil {
