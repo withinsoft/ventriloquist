@@ -34,7 +34,7 @@ type bot struct {
 
 var re = regexp.MustCompile(`[^\x60~!@#$%^&*()_+-=[\]{};':"\|,.\/<>?]+`)
 
-func deleteLater(s *discordgo.Session, dur time.Duration,  msgs ...*discordgo.Message) {
+func deleteLater(s *discordgo.Session, dur time.Duration, msgs ...*discordgo.Message) {
 	time.Sleep(dur)
 	for _, m := range msgs {
 		go s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -309,7 +309,7 @@ func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 	}
 
 	reply, err := s.ChannelMessageSend(m.ChannelID, "Updated. Thanks!")
-	go deleteLater(s, 30 *time.Second, m, reply)
+	go deleteLater(s, 30*time.Second, m, reply)
 	return err
 }
 
