@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/rakyll/statik/fs"
-	"golang.org/x/time/rate"
 )
 
 var (
@@ -49,7 +47,6 @@ type basicCommand struct {
 	*command
 	handler     Handler
 	permissions Handler
-	limiter     *rate.Limiter
 }
 
 func (bc *basicCommand) Handler(s *discordgo.Session, m *discordgo.Message, parv []string) error {
@@ -57,10 +54,6 @@ func (bc *basicCommand) Handler(s *discordgo.Session, m *discordgo.Message, parv
 }
 
 func (bc *basicCommand) Permissions(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	if !bc.limiter.Allow() {
-		return ErrRateLimitExceeded
-	}
-
 	return bc.permissions(s, m, parv)
 }
 
@@ -97,7 +90,6 @@ func NewBasicCommand(verb, helptext string, permissions, handler Handler) Comman
 		},
 		handler:     handler,
 		permissions: permissions,
-		limiter:     rate.NewLimiter(rate.Every(5*time.Second), 1),
 	}
 }
 
