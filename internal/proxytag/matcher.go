@@ -52,6 +52,10 @@ type Matcher func(string) (Match, error)
 
 // Parse parses a message with a list of matchers and returns the
 func Parse(message string, matchers ...Matcher) (Match, error) {
+	if len(message) < 3 {
+		return Match{}, ErrNoMatch
+	}
+
 	for _, mat := range matchers {
 		mm, merr := mat(message)
 		if merr != nil {
