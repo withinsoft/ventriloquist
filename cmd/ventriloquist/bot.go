@@ -233,7 +233,7 @@ func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []str
 		return errors.New("usage: ;update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
 	}
 
-	name := re.FindString(parv[1])
+	name := parv[1]
 	aurl := parv[2]
 	_, err := url.Parse(aurl)
 	if err != nil {
