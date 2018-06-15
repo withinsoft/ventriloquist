@@ -457,6 +457,14 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		Content:   match.Body,
 		Username:  member.Name,
 		AvatarURL: member.AvatarURL,
+		Embeds: []embeds{
+			{
+				Footer: embedFooter{
+					Text:    fmt.Sprintf("%s#%s", m.Author.Username, m.Author.Discriminator),
+					IconURL: m.Author.AvatarURL("32"),
+				},
+			},
+		},
 	}
 
 	t0 := time.Now()

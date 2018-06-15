@@ -11,9 +11,26 @@ import (
 )
 
 type dWebhook struct {
-	Content   string `json:"content,omitifempty"`
-	Username  string `json:"username"`
-	AvatarURL string `json:"avatar_url"`
+	Content   string   `json:"content,omitifempty"`
+	Username  string   `json:"username"`
+	AvatarURL string   `json:"avatar_url"`
+	Embeds    []embeds `json:"embeds,omitifempty"`
+}
+
+type embedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
+}
+
+type embedFooter struct {
+	Text    string `json:"text"`
+	IconURL string `json:"icon_url"`
+}
+
+type embeds struct {
+	Fields []embedField `json:"fields"`
+	Footer embedFooter  `json:"footer"`
 }
 
 func sendWebhook(whurl string, dw dWebhook) error {
