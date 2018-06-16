@@ -62,7 +62,7 @@ func main() {
 	ln.Log(ctx, ln.Action("database opened"))
 
 	const fiftyMegs = 1024 * 1024 * 50
-	b := bot{
+	b := &bot{
 		cfg: cfg,
 		db: DB{
 			s: db,

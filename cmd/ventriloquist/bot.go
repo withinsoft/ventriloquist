@@ -20,9 +20,10 @@ import (
 )
 
 type bot struct {
-	cfg config
-	db  DB
-	dg  *discordgo.Session
+	cfg             config
+	db              DB
+	dg              *discordgo.Session
+	lastProxiedUser string
 
 	proxiedLine      metrics.Counter
 	messageDeletions metrics.Counter
@@ -383,7 +384,7 @@ func (b bot) export(s *discordgo.Session, m *discordgo.Message, parv []string) e
 	return nil
 }
 
-func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -453,18 +454,25 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	dw := dWebhook{
-		Content:   match.Body,
-		Username:  member.Name,
-		AvatarURL: member.AvatarURL,
-		Embeds: []embeds{
+	var ebds []embeds
+
+	ln.Log(ctx, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_user": b.lastProxiedUser})
+	if m.Author.ID != b.lastProxiedUser {
+		ebds = []embeds{
 			{
 				Footer: embedFooter{
 					Text:    fmt.Sprintf("%s#%s", m.Author.Username, m.Author.Discriminator),
 					IconURL: m.Author.AvatarURL("32"),
 				},
 			},
-		},
+		}
+	}
+
+	dw := dWebhook{
+		Content:   match.Body,
+		Username:  member.Name,
+		AvatarURL: member.AvatarURL,
+		Embeds:    ebds,
 	}
 
 	t0 := time.Now()
@@ -476,6 +484,8 @@ func (b bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	b.webhookDuration.Observe(float64(time.Since(t0)))
 	b.webhookSuccess.Add(1)
+b.lastProxiedUser = m.Author.ID
+
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
