@@ -68,6 +68,7 @@ func main() {
 			s: db,
 		},
 		dg: dg,
+		lastProxiedUser: map[string]string{},
 
 		proxiedLine:      prov.NewCounter("discord.messages.proxied.line"),
 		messageDeletions: prov.NewCounter("discord.messages.deleted"),

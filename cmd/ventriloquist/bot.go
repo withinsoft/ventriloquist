@@ -23,7 +23,7 @@ type bot struct {
 	cfg             config
 	db              DB
 	dg              *discordgo.Session
-	lastProxiedUser string
+	lastProxiedUser map[string]string
 
 	proxiedLine      metrics.Counter
 	messageDeletions metrics.Counter
@@ -454,20 +454,28 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	var ebds []embeds
-
-	ln.Log(ctx, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_user": b.lastProxiedUser})
-	if m.Author.ID != b.lastProxiedUser {
-		ebds = []embeds{
-			{
-				Footer: embedFooter{
-					Text:    fmt.Sprintf("%s#%s", m.Author.Username, m.Author.Discriminator),
-					IconURL: m.Author.AvatarURL("32"),
-				},
+	wantEbds := []embeds{
+		{
+			Footer: embedFooter{
+				Text:    fmt.Sprintf("%s#%s", m.Author.Username, m.Author.Discriminator),
+				IconURL: m.Author.AvatarURL("32"),
 			},
-		}
+		},
 	}
 
+	var ebds []embeds
+	lpu, ok := b.lastProxiedUser[m.ChannelID]
+	if !ok {
+		ebds = wantEbds
+		goto skipEbds
+	}
+
+	ln.Log(ctx, f, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_user": lpu})
+	if m.Author.ID != lpu {
+		ebds = wantEbds
+	}
+
+skipEbds:
 	dw := dWebhook{
 		Content:   match.Body,
 		Username:  member.Name,
@@ -484,8 +492,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	b.webhookDuration.Observe(float64(time.Since(t0)))
 	b.webhookSuccess.Add(1)
-b.lastProxiedUser = m.Author.ID
-
+	b.lastProxiedUser[m.ChannelID] = m.Author.ID
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
