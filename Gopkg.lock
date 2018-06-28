@@ -10,7 +10,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/Xe/ln"
-  packages = [".","opname"]
+  packages = [
+    ".",
+    "opname"
+  ]
   revision = "ae4f7456500d90115d357025137fc7ece5f6f5ef"
 
 [[projects]]
@@ -21,7 +24,14 @@
 
 [[projects]]
   name = "github.com/asdine/storm"
-  packages = [".","codec","codec/json","index","internal","q"]
+  packages = [
+    ".",
+    "codec",
+    "codec/json",
+    "index",
+    "internal",
+    "q"
+  ]
   revision = "bda68dab90fc908ee5dbccb36400edf4f54972d6"
   version = "v2.1.1"
 
@@ -39,7 +49,14 @@
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["log","metrics","metrics/generic","metrics/graphite","metrics/internal/lv","util/conn"]
+  packages = [
+    "log",
+    "metrics",
+    "metrics/generic",
+    "metrics/graphite",
+    "metrics/internal/lv",
+    "util/conn"
+  ]
   revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
   version = "v0.7.0"
 
@@ -58,7 +75,13 @@
 [[projects]]
   branch = "master"
   name = "github.com/golang/groupcache"
-  packages = [".","consistenthash","groupcachepb","lru","singleflight"]
+  packages = [
+    ".",
+    "consistenthash",
+    "groupcachepb",
+    "lru",
+    "singleflight"
+  ]
   revision = "24b0969c4cb722950103eed87108c8d291a8df00"
 
 [[projects]]
@@ -66,6 +89,18 @@
   packages = ["proto"]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gopherjs/gopherjs"
+  packages = ["js"]
+  revision = "8dffc02ea1cb8398bb73f30424697c60fcf8d4c5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gopherjs/vecty"
+  packages = ["."]
+  revision = "a3bd138280bfe93b8474e3326fbea2038e3dbc8a"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -81,7 +116,10 @@
 
 [[projects]]
   name = "github.com/joho/godotenv"
-  packages = [".","autoload"]
+  packages = [
+    ".",
+    "autoload"
+  ]
   revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
   version = "v1.2.0"
 
@@ -106,7 +144,11 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["nacl/secretbox","poly1305","salsa20/salsa"]
+  packages = [
+    "nacl/secretbox",
+    "poly1305",
+    "salsa20/salsa"
+  ]
   revision = "a3beeb748656e13e54256fd2cde19e058f41f60f"
 
 [[projects]]
@@ -130,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "55b88487870a59ca8b90e4f79accf64de8bc3afc4ceaba40615117f8bc17b59d"
+  inputs-digest = "0f79c2215fbb20c1336993a23ad2cca7e3a60e446173783d4875b78af662ce2a"
   solver-name = "gps-cdcl"
   solver-version = 1
