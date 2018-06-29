@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Xe/ln"
@@ -67,8 +68,9 @@ func main() {
 		db: DB{
 			s: db,
 		},
-		dg: dg,
-		lastProxiedUser: map[string]string{},
+		dg:              dg,
+		lastProxiedUser: map[string]time.Time{},
+		lpuLock:         &sync.RWMutex{},
 
 		proxiedLine:      prov.NewCounter("discord.messages.proxied.line"),
 		messageDeletions: prov.NewCounter("discord.messages.deleted"),

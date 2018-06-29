@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Xe/ln"
@@ -23,7 +24,8 @@ type bot struct {
 	cfg             config
 	db              DB
 	dg              *discordgo.Session
-	lastProxiedUser map[string]string
+	lastProxiedUser map[string]time.Time
+	lpuLock         *sync.RWMutex
 
 	proxiedLine      metrics.Counter
 	messageDeletions metrics.Counter
@@ -323,7 +325,7 @@ func (b bot) nukeSystem(s *discordgo.Session, m *discordgo.Message, parv []strin
 
 	utkn := parv[1]
 	if !strings.EqualFold(tkn, utkn) {
-		return errors.New("invalid delete token, see .nuke")
+		return errors.New("invalid delete token, see ;nuke")
 	}
 
 	err := b.db.NukeSystem(m.Author.ID)
@@ -464,14 +466,16 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	var ebds []embeds
-	lpu, ok := b.lastProxiedUser[m.ChannelID]
+	b.lpuLock.RLock()
+	lpt, ok := b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID]
+	b.lpuLock.RUnlock()
 	if !ok {
 		ebds = wantEbds
 		goto skipEbds
 	}
 
-	ln.Log(ctx, f, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_user": lpu})
-	if m.Author.ID != lpu {
+	ln.Log(ctx, f, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_time": lpt})
+	if time.Now().After(lpt.Add(5 * time.Minute)) {
 		ebds = wantEbds
 	}
 
@@ -492,7 +496,10 @@ skipEbds:
 	}
 	b.webhookDuration.Observe(float64(time.Since(t0)))
 	b.webhookSuccess.Add(1)
-	b.lastProxiedUser[m.ChannelID] = m.Author.ID
+
+	b.lpuLock.Lock()
+	b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID] = time.Now()
+	b.lpuLock.Unlock()
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
