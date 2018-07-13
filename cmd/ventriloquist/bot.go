@@ -475,7 +475,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	ln.Log(ctx, f, ln.Action("lastProxiedUserTest"), ln.F{"m_author_id": m.Author.ID, "last_proxied_time": lpt})
-	if time.Now().After(lpt.Add(5 * time.Minute)) {
+	if time.Now().After(lpt.Add(b.cfg.MessageTagLifetime)) {
 		ebds = wantEbds
 	}
 

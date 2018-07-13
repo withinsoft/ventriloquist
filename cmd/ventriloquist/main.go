@@ -18,11 +18,12 @@ import (
 )
 
 type config struct {
-	DiscordToken   string `env:"DISCORD_TOKEN,required"`
-	DBPath         string `env:"DB_PATH,default=var/vent.db"`
-	AdminRole      string `env:"ADMIN_ROLE,required"`
-	GraphiteServer string `env:"GRAPHITE_SERVER,required"`
-	LoggingWebhook string `env:"LOGGING_WEBHOOK,required"`
+	DiscordToken       string        `env:"DISCORD_TOKEN,required"`
+	DBPath             string        `env:"DB_PATH,default=var/vent.db"`
+	AdminRole          string        `env:"ADMIN_ROLE,required"`
+	GraphiteServer     string        `env:"GRAPHITE_SERVER,required"`
+	LoggingWebhook     string        `env:"LOGGING_WEBHOOK,required"`
+	MessageTagLifetime time.Duration `env:"MESSAGE_TAG_LIFETIME,default=1h30m"`
 }
 
 func main() {
