@@ -28,12 +28,11 @@ func Nameslash(message string) (Match, error) {
 	f0 := fl[0]
 
 	var cmp string
-	// the backslash MUST be present in the first word
-	if strings.Contains(f0, `\`) {
-		cmp = `\`
-	}
-	if strings.Contains(f0, `:`) {
-		cmp = ":"
+
+	for _, sigil := range []string{`\`, `:`, `/`, ">"} {
+		if strings.Contains(f0, sigil) {
+			cmp = sigil
+		}
 	}
 
 	if cmp == "" {

@@ -34,6 +34,22 @@ func TestNameslash(t *testing.T) {
 				Body:   "hi there",
 			},
 		},
+		{
+			input: "Nicole> hi there",
+			output: Match{
+				Name:   "Nicole",
+				Method: "Nameslash",
+				Body:   "hi there",
+			},
+		},
+		{
+			input: "Nicole/ hi there",
+			output: Match{
+				Name:   "Nicole",
+				Method: "Nameslash",
+				Body:   "hi there",
+			},
+		},
 	}
 
 	for _, cs := range cases {
