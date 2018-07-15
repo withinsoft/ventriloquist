@@ -143,7 +143,7 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
-	must(dg.UpdateStatus(0, "memcpy in the cloud"))
+	must(dg.UpdateStatus(0, ";help for help | ;add <name> <avatar url>"))
 	ln.Log(ctx, ln.Action("opened discordgo websocket"))
 
 	ln.Log(ctx, ln.Info("waiting for lines to proxy"), ln.F{"to_discord": true})
