@@ -1,0 +1,56 @@
+# github.com/VividCortex/gohistogram v1.0.0
+github.com/VividCortex/gohistogram
+# github.com/Xe/ln v0.1.1
+github.com/Xe/ln
+github.com/Xe/ln/opname
+# github.com/Xe/uuid v0.0.0-20150320100236-62b230097e9c
+github.com/Xe/uuid
+# github.com/asdine/storm v2.1.1+incompatible
+github.com/asdine/storm
+github.com/asdine/storm/codec
+github.com/asdine/storm/codec/json
+github.com/asdine/storm/index
+github.com/asdine/storm/internal
+github.com/asdine/storm/q
+# github.com/bwmarrin/discordgo v0.18.0
+github.com/bwmarrin/discordgo
+# github.com/coreos/bbolt v1.3.0
+github.com/coreos/bbolt
+# github.com/go-kit/kit v0.7.0
+github.com/go-kit/kit/log
+github.com/go-kit/kit/metrics
+github.com/go-kit/kit/metrics/graphite
+github.com/go-kit/kit/metrics/generic
+github.com/go-kit/kit/util/conn
+github.com/go-kit/kit/metrics/internal/lv
+# github.com/go-logfmt/logfmt v0.3.0
+github.com/go-logfmt/logfmt
+# github.com/go-stack/stack v1.7.0
+github.com/go-stack/stack
+# github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
+github.com/golang/groupcache
+github.com/golang/groupcache/consistenthash
+github.com/golang/groupcache/groupcachepb
+github.com/golang/groupcache/lru
+github.com/golang/groupcache/singleflight
+# github.com/golang/protobuf v1.1.0
+github.com/golang/protobuf/proto
+# github.com/gorilla/websocket v1.2.0
+github.com/gorilla/websocket
+# github.com/joeshaw/envdecode v0.0.0-20180312135643-c9e015854467
+github.com/joeshaw/envdecode
+# github.com/joho/godotenv v1.2.0
+github.com/joho/godotenv/autoload
+github.com/joho/godotenv
+# github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515
+github.com/kr/logfmt
+# github.com/pkg/errors v0.8.0
+github.com/pkg/errors
+# github.com/rakyll/statik v0.1.1
+github.com/rakyll/statik/fs
+# golang.org/x/crypto v0.0.0-20180525160159-a3beeb748656
+golang.org/x/crypto/nacl/secretbox
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/salsa20/salsa
+# golang.org/x/sys v0.0.0-20180525142821-c11f84a56e43
+golang.org/x/sys/unix
