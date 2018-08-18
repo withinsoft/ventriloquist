@@ -1,5 +1,7 @@
 # Ventriloquist
 
+[![Build Status](https://travis-ci.org/withinsoft/ventriloquist.svg?branch=master)](https://travis-ci.org/withinsoft/ventriloquist) 
+
 In many online communities, there has been a need for there to be more than more
 "voice" per chat connection. Sometimes for roleplay, sometimes to multiplex
 several "people" over a single chat connection. This bot seeks to help people
