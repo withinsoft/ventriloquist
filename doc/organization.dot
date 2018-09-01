@@ -1,0 +1,88 @@
+digraph G {
+  fanout [label="main.Bot"]
+
+  subgraph cluster_0 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+    label = "Commands";
+    
+    ch [label="Command Handler"]
+    mf [label="Moderator Force"]
+    
+    ch -> add
+    ch -> update
+    ch -> delete
+    ch -> export
+    ch -> list
+    ch -> nuke
+    ch -> chproxy
+    ch -> mf
+    mf -> list
+    mf -> update
+    mf -> chproxy
+    mf -> delete
+  }
+  
+  subgraph cluster_1 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+    label = "Database";
+    
+    subgraph cluster_2 {
+      style=filled;
+      color=grey;
+      label="Systemmates"
+        
+      AddSystemmate [label="Add"]
+      UpdateSystemmate [label="Update"]
+      FindSystemmates [label="Find"]
+      ListSystemmates [label="List"]
+      DeleteSystemmate [label="Delete"]
+      FindSystemmateByMatch [label="Find By Match"]
+      NukeSystem [label="Nuke System"]
+    }
+
+    subgraph cluster_3 {    
+      style=filled;
+      color=grey;
+      label="Webhooks"
+      
+      AddWebhook [label="Add"]
+      FindWebhook [label="Find"]
+    }
+    
+    add -> AddSystemmate
+    update -> UpdateSystemmate
+    update -> FindSystemmates
+    chproxy -> FindSystemmates
+    chproxy -> UpdateSystemmate
+    chproxy -> ListSystemmates
+    list -> FindSystemmates
+    delete -> DeleteSystemmate
+    nuke -> NukeSystem
+    export -> FindSystemmates
+  }
+  
+  add -> eg
+  update -> eg
+  delete -> eg
+  export -> eg
+  list -> eg
+  nuke -> eg
+  chproxy -> eg
+  ph -> FindSystemmateByMatch
+  ph -> AddWebhook
+  ph -> FindWebhook
+
+  discord [shape=Mdiamond,label="Discord"];
+  ph [label="Proxy Handler"]
+  eg [label="Discord Egress"]
+ 
+  discord -> fanout
+  eg -> discord
+  fanout -> ch
+  fanout -> ph
+  ph -> eg
+}
