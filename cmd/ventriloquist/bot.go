@@ -125,7 +125,7 @@ func checkAvatarURL(aurl string) error {
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
-		return errors.New("usage: ;add <name> <avatar url> [proxy sample]\n\n(don't include the angle brackets)")
+		return errors.New("usage: ;add <name> <avatar url> <proxy sample>\n\n(without including the angle brackets; the proxy sample is what your systemmate saying `this` looks like. Check ;help if in need of further assistance.)")
 	}
 
 	name := parv[1]
@@ -153,7 +153,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		}
 
 		if match.Body != "this" {
-			return fmt.Errorf("proxy \"this\", not %q", match.Body)
+			return fmt.Errorf("To provide a proxy sample, at the end of the command type what your systemmate saying `this` looks like, and not `%q`", match.Body)
 		}
 
 		match.Body = ""
