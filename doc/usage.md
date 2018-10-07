@@ -83,7 +83,7 @@ To add a systemmate named Nicole with [this avatar](https://cdn.discordapp.com/a
 Optionally, you can set proxy tags for systemmates on addition:
 
 ```
-;add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png [this]
+;add Nicole https://cdn.discordapp.com/avatars/201841370023985153/6879455d380aeb5bd9ee87c02f873e99.png [test]
 ```
 
 ### Proxy a message
@@ -172,7 +172,7 @@ In any channel the bot is in:
 then correct it with:
 
 ```
-;chproxy Nicole [this]
+;chproxy Nicole [test]
 ```
 
 and the proxying settings will be immediately updated.
@@ -222,7 +222,7 @@ In any channel the bot is in:
 then correct it with:
 
 ```
-;mod_chproxy @Quora Drake [this]
+;mod_chproxy @Quora Drake [test]
 ```
 
 and the proxying settings will be immediately updated.
