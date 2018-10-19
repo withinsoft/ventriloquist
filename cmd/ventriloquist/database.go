@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/Xe/ln"
-	"github.com/Xe/uuid"
 	"github.com/asdine/storm"
+	"github.com/gofrs/uuid"
 	"github.com/golang/groupcache"
 	"github.com/withinsoft/ventriloquist/internal/proxytag"
 )
@@ -53,7 +53,12 @@ func (d DB) AddSystemmate(s Systemmate) (Systemmate, error) {
 	}
 
 skip:
-	s.ID = uuid.New()
+	id, err := uuid.NewV4()
+	if err != nil {
+		return Systemmate{}, err
+	}
+
+	s.ID = id.String()
 	return s, d.s.Save(&s)
 }
 
@@ -165,8 +170,13 @@ func (d DB) NukeSystem(coreDiscordID string) error {
 }
 
 func (d DB) AddWebhook(channelID, whurl string) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	wh := Webhook{
-		ID:         uuid.New(),
+		ID:         id.String(),
 		ChannelID:  channelID,
 		WebhookURL: whurl,
 	}

@@ -1,7 +1,9 @@
 FROM xena/go:1.11.1 AS build
-ENV GORPROXY https://cache.greedo.xeserv.us
-COPY . /root/go/src/github.com/withinsoft/ventriloquist
-RUN GOBIN=/usr/local/bin go install github.com/withinsoft/ventriloquist/cmd/ventriloquist
+ENV GOPROXY https://cache.greedo.xeserv.us
+WORKDIR /ventriloquist
+COPY . .
+RUN apk add --no-cache build-base \
+ && GOBIN=/usr/local/bin go install ./cmd/ventriloquist
 
 FROM xena/alpine
 COPY --from=build /usr/local/bin/ventriloquist /usr/local/bin/ventriloquist
