@@ -7,10 +7,7 @@ import (
 func isSigil(inp rune) bool {
 	switch inp {
 	// english formatting characters
-	case ';', '.', '?', '!', ',', '-':
-		return false
-	// discord formatting characters
-	case '*', '_', '<', '>', '~':
+	case ';', '.', '?', '!', ',', '>', '<':
 		return false
 	}
 
