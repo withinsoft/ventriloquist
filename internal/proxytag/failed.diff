@@ -1,0 +1,153 @@
+diff --git a/internal/proxytag/match_test.go b/internal/proxytag/match_test.go
+index 8b0df5f..302b08c 100644
+--- a/internal/proxytag/match_test.go
++++ b/internal/proxytag/match_test.go
+@@ -3,14 +3,14 @@ package proxytag
+ import "testing"
+ 
+ type testCase struct {
+-	matcher Matcher
++	matcher []Matcher
+ 	input   string
+ 	output  Match
+ 	err     error
+ }
+ 
+ func (cs testCase) Run(t *testing.T) {
+-	m, err := Parse(cs.input, cs.matcher)
++	m, err := Parse(cs.input, cs.matcher...)
+ 
+ 	if cs.output != m {
+ 		t.Logf("expected: %#v", cs.output)
+diff --git a/internal/proxytag/matcher.go b/internal/proxytag/matcher.go
+index d156b68..425c095 100644
+--- a/internal/proxytag/matcher.go
++++ b/internal/proxytag/matcher.go
+@@ -56,6 +56,8 @@ func Parse(message string, matchers ...Matcher) (Match, error) {
+ 		return Match{}, ErrNoMatch
+ 	}
+ 
++	var result []Match
++
+ 	for _, mat := range matchers {
+ 		mm, merr := mat(message)
+ 		if merr != nil {
+@@ -63,11 +65,26 @@ func Parse(message string, matchers ...Matcher) (Match, error) {
+ 				continue
+ 			}
+ 
+-			return mm, merr
++			result = append(result, mm)
+ 		}
+-
+-		return mm, nil
+ 	}
+ 
+-	return Match{}, ErrNoMatch
++	switch len(result) {
++	case 1:
++		return result[0], nil
++	case 2:
++		const dontWant = `Sigils`
++
++		for _, match := range result {
++			if match.Method == dontWant {
++				continue
++			}
++
++			return match, nil
++		}
++
++		fallthrough
++	default:
++		return Match{}, ErrNoMatch
++	}
+ }
+diff --git a/internal/proxytag/matcher_test.go b/internal/proxytag/matcher_test.go
+index 98ae700..db6eb58 100644
+--- a/internal/proxytag/matcher_test.go
++++ b/internal/proxytag/matcher_test.go
+@@ -8,7 +8,8 @@ func TestMatcher(t *testing.T) {
+ 			err: ErrNoMatch,
+ 		},
+ 		{
+-			input: "Drake\\ You used to call me on my cellphone...",
++			matcher: []Matcher{Nameslash, Sigils},
++			input:   "Drake\\ You used to call me on my cellphone...",
+ 			output: Match{
+ 				Name:   "Drake",
+ 				Method: "Nameslash",
+@@ -18,7 +19,6 @@ func TestMatcher(t *testing.T) {
+ 	}
+ 
+ 	for _, cs := range cases {
+-		cs.matcher = Nameslash
+ 		t.Run(cs.input, cs.Run)
+ 	}
+ }
+diff --git a/internal/proxytag/nameslash_test.go b/internal/proxytag/nameslash_test.go
+index 0bf97b5..a6a9898 100644
+--- a/internal/proxytag/nameslash_test.go
++++ b/internal/proxytag/nameslash_test.go
+@@ -53,7 +53,7 @@ func TestNameslash(t *testing.T) {
+ 	}
+ 
+ 	for _, cs := range cases {
+-		cs.matcher = Nameslash
++		cs.matcher = []Matcher{Nameslash}
+ 		t.Run(fmt.Sprint(cs), cs.Run)
+ 	}
+ }
+diff --git a/internal/proxytag/sigils.go b/internal/proxytag/sigils.go
+index 8617e3d..3690fc8 100644
+--- a/internal/proxytag/sigils.go
++++ b/internal/proxytag/sigils.go
+@@ -46,7 +46,7 @@ func tailSigils(inp string) (string, string) {
+ 	return Reverse(string(sigils)), Reverse(string(result))
+ }
+ 
+-// HalfSigilStart parses the "half sigil at the start" method of proxy tagging.
++// HalfSigilEnd parses the "half sigil at the end" method of proxy tagging.
+ //
+ // Given a message of the form:
+ //
+@@ -115,7 +115,7 @@ func Sigils(message string) (Match, error) {
+ 	startSigils, body1 := leadSigils(message)
+ 	endSigils, body := tailSigils(body1)
+ 
+-	if startSigils == "" || endSigils == "" {
++	if startSigils == "" && endSigils == "" {
+ 		return Match{}, ErrNoMatch
+ 	}
+ 
+diff --git a/internal/proxytag/sigils_test.go b/internal/proxytag/sigils_test.go
+index 5732f68..a0980f8 100644
+--- a/internal/proxytag/sigils_test.go
++++ b/internal/proxytag/sigils_test.go
+@@ -147,7 +147,7 @@ func TestHalfSigilStart(t *testing.T) {
+ 	}
+ 
+ 	for _, cs := range cases {
+-		cs.matcher = HalfSigilStart
++		cs.matcher = []Matcher{Sigils, HalfSigilStart}
+ 		t.Run(cs.input, cs.Run)
+ 	}
+ }
+@@ -189,7 +189,7 @@ func TestHalfSigilEnd(t *testing.T) {
+ 	}
+ 
+ 	for _, cs := range cases {
+-		cs.matcher = HalfSigilEnd
++		cs.matcher = []Matcher{Sigils, HalfSigilEnd}
+ 		t.Run(cs.input, cs.Run)
+ 	}
+ }
+@@ -247,7 +247,7 @@ func TestSigls(t *testing.T) {
+ 	}
+ 
+ 	for _, cs := range cases {
+-		cs.matcher = Sigils
++		cs.matcher = []Matcher{Sigils, HalfSigilStart, HalfSigilEnd}
+ 		t.Run(cs.input, cs.Run)
+ 	}
+ }

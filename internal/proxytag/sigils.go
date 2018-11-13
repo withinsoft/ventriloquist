@@ -115,6 +115,10 @@ func Sigils(message string) (Match, error) {
 	startSigils, body1 := leadSigils(message)
 	endSigils, body := tailSigils(body1)
 
+	if len(startSigils) != len(endSigils) {
+		return Match{}, ErrNoMatch
+	}
+
 	if startSigils == "" || endSigils == "" {
 		return Match{}, ErrNoMatch
 	}
