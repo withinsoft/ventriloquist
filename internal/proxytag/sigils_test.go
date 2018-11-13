@@ -241,10 +241,6 @@ func TestSigls(t *testing.T) {
 			},
 		},
 		{
-			input: "[ <@72838115944828928>",
-			err:   ErrNoMatch,
-		},
-		{
 			input: "[ <@72838115944828928> ]]",
 			err:   ErrNoMatch,
 		},

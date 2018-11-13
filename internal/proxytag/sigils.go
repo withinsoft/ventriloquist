@@ -119,8 +119,12 @@ func Sigils(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	if startSigils == "" || endSigils == "" {
-		return Match{}, ErrNoMatch
+	if startSigils == "" {
+		return HalfSigilEnd(message)
+	}
+
+	if endSigils == "" {
+		return HalfSigilStart(message)
 	}
 
 	return Match{
