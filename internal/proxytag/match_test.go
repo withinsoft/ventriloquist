@@ -22,7 +22,7 @@ func (cs testCase) Run(t *testing.T) {
 		if cs.output.String() != m.String() {
 			t.Logf("expected: %s", cs.output.String())
 			t.Logf("got:      %s", m.String())
-			t.Fatalf("string output of input duffers from match")
+			t.Fatalf("string output of input differs from match")
 		}
 	})
 

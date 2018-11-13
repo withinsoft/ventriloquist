@@ -194,7 +194,7 @@ func TestHalfSigilEnd(t *testing.T) {
 	}
 }
 
-func TestSigls(t *testing.T) {
+func TestSigils(t *testing.T) {
 	cases := []testCase{
 		{
 			input: "as",
@@ -237,6 +237,22 @@ func TestSigls(t *testing.T) {
 				InitialSigil: "$",
 				EndSigil:     "$",
 				Method:       "Sigils",
+				Body:         "memes",
+			},
+		},
+		{
+			input: "memes]]",
+			output: Match{
+				EndSigil: "]]",
+				Method:   "HalfSigilEnd",
+				Body:     "memes",
+			},
+		},
+		{
+			input: "[[memes",
+			output: Match{
+				InitialSigil: "[[",
+				Method:       "HalfSigilStart",
 				Body:         "memes",
 			},
 		},
