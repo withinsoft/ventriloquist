@@ -402,8 +402,27 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg = strings.Replace(msg, "@everyone", "at-everyone", -1)
 	msg = strings.Replace(msg, "@channel", "at-channel", -1)
 	msg = strings.Replace(msg, "@someone", "at-someone", -1)
+	msg = strings.TrimSpace(msg)
 
-	match, err := proxytag.Parse(msg, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
+	// gather the user's proxyies
+	mates := b.db.FindSystemmates(m.Author.ID)
+
+	if(mates == nil || len(mates) == 0) {
+		return
+	}
+
+	// assemble the matchers in a list (many Matcherobj containing a Matcher each):
+	// make an array as big as the systemmates
+	var matcherobjs [len(mates)]Matcherobj 
+	// for each make a Matcherobj
+	for i, mate := range mates {
+		matcherobjs[i] = proxytag.CreateMatcherobj(mate.Match)
+	}
+
+	// send them to parse
+	match, err := proxytag.Parse(msg, matcherobjs...)
+	// if it comes good, it's valid for real (no db check required)
+	
 	if err != nil {
 		if err == proxytag.ErrNoMatch {
 			// don't care, not a proxied line, yolo
@@ -416,16 +435,26 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		ln.Error(ctx, err, f, ln.Action("looking for proxied lines"))
 	}
-	f["name"] = match.Name
+	//recover the right sysmate
+	var member Systemmate
+	for _, mate := range mates {
+		if mate.Match.String() == match.String() {
+			member = mate
+			break
+		}
+	}
 
+	f["name"] = match.Name
+	//skip the db check
+	/*
 	member, err := b.db.FindSystemmateByMatch(m.Author.ID, match)
 	if err != nil {
 		if err.Error() != "not found" || !strings.Contains(err.Error(), "systemmate not found") {
 			ln.Error(ctx, err, f, ln.Action("find systemmate by match"))
 		}
-
 		return
 	}
+	*/
 	f["member_id"] = member.ID
 	f["member_name"] = member.Name
 	f["proxy_match"] = member.Match.String()
