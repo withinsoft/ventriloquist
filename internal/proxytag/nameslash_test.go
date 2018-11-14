@@ -15,8 +15,12 @@ func TestNameslash(t *testing.T) {
 			err:   ErrNoMatch,
 		},
 		{
-			input: "foo\\bar hi",
-			err:   ErrNoMatch,
+			input: "Nicole:hi there",
+			output: Match{
+				Name:   "Nicole",
+				Method: "Nameslash",
+				Body:   "hi there",
+			},
 		},
 		{
 			input: "Nicole\\ hi there",

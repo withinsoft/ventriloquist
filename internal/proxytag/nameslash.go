@@ -24,13 +24,10 @@ func Nameslash(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	fl := strings.Split(message, " ")
-	f0 := fl[0]
-
 	var cmp string
 
 	for _, sigil := range []string{`\`, `:`, `/`, ">"} {
-		if strings.Contains(f0, sigil) {
+		if strings.Contains(message, sigil) {
 			cmp = sigil
 		}
 	}
@@ -39,13 +36,11 @@ func Nameslash(message string) (Match, error) {
 		return Match{}, ErrNoMatch
 	}
 
-	// the backslash MUST be the last character in the first word
-	if string(f0[len(f0)-1]) != cmp {
-		return Match{}, ErrNoMatch
-	}
+	fl := strings.Split(message, cmp)
+	f0 := fl[0]
 
-	name := f0[:len(f0)-1]
-	body := strings.Join(fl[1:], " ")
+	name := f0[:len(f0)]
+	body := strings.TrimSpace(strings.Join(fl[1:], cmp))
 	return Match{
 		Name:   name,
 		Method: "Nameslash",
