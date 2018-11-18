@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -139,6 +140,86 @@ func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Syste
 	}
 
 	return Systemmate{}, errors.New("database: systemmate not found")
+}
+
+func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Systemmate, string, error) {
+	sms, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return Systemmate{}, "", err
+	}
+
+	matchers := make([]map[string]interface{}, len(sms))
+
+	for i, sm := range sms {
+		match := sm.Match
+		var prefix, suffix string
+		if match.Method == "Nameslash" {
+			prefix = match.Name + "\\"
+		} else if match.Method == "Sigils" {
+			prefix = match.InitialSigil
+			suffix = match.EndSigil
+		} else if match.Method == "HalfSigilStart" {
+			prefix = match.InitialSigil
+		} else {
+			// Dirty hack to create a matcher that won't match anything
+			prefix = "\x00"
+			suffix = "\x00"
+		}
+		if suffix != "" {
+			matchers[i] = map[string]interface{}{
+				"matcherPrefix": prefix,
+				"matcherSuffix": suffix,
+				"matcherSystemMate": sm.Name,
+			}
+		} else {
+			matchers[i] = map[string]interface{}{
+				"matcherPrefix": prefix,
+				"matcherSystemMate": sm.Name,
+			}
+
+		}
+	}
+
+	matcherMessage := map[string]interface{}{
+		"messageBody": message,
+		"messageMatchers": matchers,
+	}
+
+	cmd := exec.Command("proxy-matcher")
+	cmdStdin, err := cmd.StdinPipe()
+	if err != nil {
+		return Systemmate{}, "", err
+	}
+	err = json.NewEncoder(cmdStdin).Encode(matcherMessage)
+	if err != nil {
+		return Systemmate{}, "", err
+	}
+	cmdStdin.Close()
+	cmdStdout, err := cmd.Output()
+	if err != nil {
+		return Systemmate{}, "", err
+	}
+	var matcherResponse map[string]interface{}
+	err = json.Unmarshal(cmdStdout, &matcherResponse)
+	if err != nil {
+		return Systemmate{}, "", err
+	}
+
+	if matcherResponse["responseError"] != nil || matcherResponse["responseMatch"] == nil {
+		return Systemmate{}, "", errors.New("database: systemmate not found")
+	}
+
+	match := matcherResponse["responseMatch"].(map[string]interface{})
+	matchSystemMate := match["matchSystemMate"].(string)
+	matchBody := match["matchBody"].(string)
+
+	for _, sm := range sms {
+		if sm.Name == matchSystemMate {
+			return sm, matchBody, nil
+		}
+	}
+
+	return Systemmate{}, "", errors.New("database: systemmate not found")
 }
 
 func (d DB) NukeSystem(coreDiscordID string) error {

@@ -403,22 +403,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg = strings.Replace(msg, "@channel", "at-channel", -1)
 	msg = strings.Replace(msg, "@someone", "at-someone", -1)
 
-	match, err := proxytag.Parse(msg, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
-	if err != nil {
-		if err == proxytag.ErrNoMatch {
-			// don't care, not a proxied line, yolo
-			return
-		}
-
-		if err.Error() == "database: systemmate not found" {
-			return
-		}
-
-		ln.Error(ctx, err, f, ln.Action("looking for proxied lines"))
-	}
-	f["name"] = match.Name
-
-	member, err := b.db.FindSystemmateByMatch(m.Author.ID, match)
+	member, matchBody, err := b.db.FindSystemmateByMessage(m.Author.ID, msg)
 	if err != nil {
 		if err.Error() != "not found" || !strings.Contains(err.Error(), "systemmate not found") {
 			ln.Error(ctx, err, f, ln.Action("find systemmate by match"))
@@ -426,6 +411,8 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		return
 	}
+
+	f["name"] = "Generic"
 	f["member_id"] = member.ID
 	f["member_name"] = member.Name
 	f["proxy_match"] = member.Match.String()
@@ -477,7 +464,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 skipEbds:
 	dw := dWebhook{
-		Content:   match.Body,
+		Content:   matchBody,
 		Username:  member.Name,
 		AvatarURL: member.AvatarURL,
 		Embeds:    ebds,
@@ -507,7 +494,7 @@ skipEbds:
 	b.messageDeletions.Add(1)
 
 	err = sendWebhook(b.cfg.LoggingWebhook, dWebhook{
-		Content:  fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, match.Body),
+		Content:  fmt.Sprintf("%s: %s of %s#%s (%s) in <#%s>: %s", m.ID, member.Name, m.Author.Username, m.Author.Discriminator, m.Author.ID, m.ChannelID, matchBody),
 		Username: "Ventriloquist Logging",
 	})
 	if err != nil {
