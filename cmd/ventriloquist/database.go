@@ -148,35 +148,28 @@ func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Syste
 		return Systemmate{}, "", err
 	}
 
-	matchers := make([]map[string]interface{}, len(sms))
+	matchers := make([]map[string]interface{}, 0)
 
-	for i, sm := range sms {
+	for _, sm := range sms {
 		match := sm.Match
-		var prefix, suffix string
 		if match.Method == "Nameslash" {
-			prefix = match.Name + "\\"
+			for _, slash := range []string{"\\", ":", "/", ">"} {
+				matchers = append(matchers, map[string]interface{}{
+					"matcherPrefix": match.Name + slash,
+					"matcherSystemMate": sm.Name,
+				})
+			}
 		} else if match.Method == "Sigils" {
-			prefix = match.InitialSigil
-			suffix = match.EndSigil
+			matchers = append(matchers, map[string]interface{}{
+				"matcherPrefix": match.InitialSigil,
+				"matcherSuffix": match.EndSigil,
+				"matcherSystemMate": sm.Name,
+			})
 		} else if match.Method == "HalfSigilStart" {
-			prefix = match.InitialSigil
-		} else {
-			// Dirty hack to create a matcher that won't match anything
-			prefix = "\x00"
-			suffix = "\x00"
-		}
-		if suffix != "" {
-			matchers[i] = map[string]interface{}{
-				"matcherPrefix": prefix,
-				"matcherSuffix": suffix,
+			matchers = append(matchers, map[string]interface{}{
+				"matcherPrefix": match.InitialSigil,
 				"matcherSystemMate": sm.Name,
-			}
-		} else {
-			matchers[i] = map[string]interface{}{
-				"matcherPrefix": prefix,
-				"matcherSystemMate": sm.Name,
-			}
-
+			})
 		}
 	}
 
