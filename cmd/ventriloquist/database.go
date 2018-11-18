@@ -165,7 +165,7 @@ func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Syste
 			prefix = "\x00"
 			suffix = "\x00"
 		}
-		if suffix == "" {
+		if suffix != "" {
 			matchers[i] = map[string]interface{}{
 				"matcherPrefix": prefix,
 				"matcherSuffix": suffix,
