@@ -33,6 +33,12 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
 
+  logging:
+    image: artemis/minimal-logging
+    restart: always
+    volumes:
+      - minimal-logging:/app/logs
+
 volumes:
   data:
   influxdb-data:
