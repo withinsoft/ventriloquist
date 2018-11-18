@@ -1,9 +1,9 @@
 FROM xena/go:1.11.1 AS build
 ENV GOPROXY https://cache.greedo.xeserv.us
-WORKDIR /ventriloquist
-RUN apk add --no-cache ghc cabal wget \
+RUN apk add --no-cache ghc cabal wget build-base \
  && cabal update \
- && cabal install aeson bytestring vector text \
+ && cabal install aeson bytestring vector text
+WORKDIR /ventriloquist
 COPY . .
 RUN apk add --no-cache build-base \
  && GOBIN=/usr/local/bin go install ./cmd/ventriloquist \
