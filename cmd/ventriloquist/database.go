@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,7 +27,8 @@ type Systemmate struct {
 	Name          string
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
-	Match         proxytag.Match
+	oldMatch      proxytag.OldMatch `json:"Match"` //Bad hack to work with the old DB format
+	Matchers      []proxytag.Matcher
 }
 
 type Webhook struct {
@@ -82,6 +82,9 @@ func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
 	if err != nil {
 		return nil, err
 	}
+	for _, sm := range result {
+		sm.Matchers = append(sm.Matchers, sm.oldMatch.Matchers()...)
+	}
 
 	return result, nil
 }
@@ -127,6 +130,19 @@ func (d DB) DeleteSystemmate(coreDiscordID, name string) error {
 	return errors.New("database: systemmate not found")
 }
 
+func (d DB) FindSystemMatchers(coreDiscordID string) ([]proxytag.Matcher, error) {
+	sms, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return nil, err
+	}
+
+	matchers := make([]proxytag.Matcher, 0)
+	for _, sm := range sms {
+		matchers = append(matchers, sm.Matchers...)
+	}
+	return matchers, nil
+}
+
 func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Systemmate, error) {
 	sms, err := d.FindSystemmates(coreDiscordID)
 	if err != nil {
@@ -134,7 +150,7 @@ func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Syste
 	}
 
 	for _, sm := range sms {
-		if sm.Match.String() == m.String() {
+		if sm.Name == m.Systemmate {
 			return sm, nil
 		}
 	}
@@ -143,76 +159,23 @@ func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Syste
 }
 
 func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Systemmate, string, error) {
-	sms, err := d.FindSystemmates(coreDiscordID)
+	matchers, err := d.FindSystemMatchers(coreDiscordID)
 	if err != nil {
 		return Systemmate{}, "", err
 	}
 
-	matchers := make([]map[string]interface{}, 0)
-
-	for _, sm := range sms {
-		match := sm.Match
-		if match.Method == "Nameslash" {
-			for _, slash := range []string{"\\", ":", "/", ">"} {
-				matchers = append(matchers, map[string]interface{}{
-					"matcherPrefix": match.Name + slash,
-					"matcherSystemMate": sm.Name,
-				})
-			}
-		} else if match.Method == "Sigils" {
-			matchers = append(matchers, map[string]interface{}{
-				"matcherPrefix": match.InitialSigil,
-				"matcherSuffix": match.EndSigil,
-				"matcherSystemMate": sm.Name,
-			})
-		} else if match.Method == "HalfSigilStart" {
-			matchers = append(matchers, map[string]interface{}{
-				"matcherPrefix": match.InitialSigil,
-				"matcherSystemMate": sm.Name,
-			})
-		}
-	}
-
-	matcherMessage := map[string]interface{}{
-		"messageBody": message,
-		"messageMatchers": matchers,
-	}
-
-	cmd := exec.Command("proxy-matcher")
-	cmdStdin, err := cmd.StdinPipe()
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	err = json.NewEncoder(cmdStdin).Encode(matcherMessage)
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	cmdStdin.Close()
-	cmdStdout, err := cmd.Output()
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	var matcherResponse map[string]interface{}
-	err = json.Unmarshal(cmdStdout, &matcherResponse)
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-
-	if matcherResponse["responseError"] != nil || matcherResponse["responseMatch"] == nil {
+	match, err := proxytag.MatchMessage(message, matchers)
+	if err.Error() == "error: no match found" {
 		return Systemmate{}, "", errors.New("database: systemmate not found")
+	} else if err != nil {
+		return Systemmate{}, "", err
+	}
+	sm, err := d.FindSystemmateByMatch(coreDiscordID, match)
+	if err != nil {
+		return Systemmate{}, "", err
 	}
 
-	match := matcherResponse["responseMatch"].(map[string]interface{})
-	matchSystemMate := match["matchSystemMate"].(string)
-	matchBody := match["matchBody"].(string)
-
-	for _, sm := range sms {
-		if sm.Name == matchSystemMate {
-			return sm, matchBody, nil
-		}
-	}
-
-	return Systemmate{}, "", errors.New("database: systemmate not found")
+	return sm, match.Body, nil
 }
 
 func (d DB) NukeSystem(coreDiscordID string) error {
