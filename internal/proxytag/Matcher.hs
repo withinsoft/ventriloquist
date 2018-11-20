@@ -14,16 +14,56 @@ main :: IO ()
 main = do
   input <- ByteString.Lazy.getContents
   let response =
-        case Aeson.decode input of
-          Nothing ->
-            Response
-              { responseError = Just "error: could not decode message json"
-              , responseMatch = Nothing
-              }
-          Just msg ->
-            Response {responseError = Nothing, responseMatch = messageMatch msg}
+        either (\x -> ResponseError (Text.append "error: " x)) id $ do
+          req <-
+            maybe
+              (Left "could not decode message json")
+              Right
+              (Aeson.decode input)
+          case req of
+            RequestDetectMatcher detectReq -> do
+              found <-
+                maybe
+                  (Left "no matcher detected")
+                  Right
+                  (detectMatcher detectReq)
+              return (ResponseMatcher found)
+            RequestMatchMessage msg -> do
+              found <- maybe (Left "no match found") Right (messageMatch msg)
+              return (ResponseMatch found)
       output = Aeson.encode response
   ByteString.Lazy.putStr output
+
+data Request
+  = RequestMatchMessage Message
+  | RequestDetectMatcher DetectMatcher
+  deriving (Eq, Read, Show, Generic)
+
+instance Aeson.FromJSON Request
+
+instance Aeson.ToJSON Request where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+data Response
+  = ResponseError Text
+  | ResponseMatch Match
+  | ResponseMatcher Matcher
+  deriving (Eq, Read, Show, Generic)
+
+instance Aeson.ToJSON Response where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+instance Aeson.FromJSON Response
+
+data DetectMatcher = DetectMatcher
+  { detectMatcherMessage :: Text
+  , detectMatcherSystemMate :: Text
+  } deriving (Eq, Read, Show, Generic)
+
+instance Aeson.ToJSON DetectMatcher where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+instance Aeson.FromJSON DetectMatcher
 
 data Message = Message
   { messageBody :: Text
@@ -58,15 +98,6 @@ instance Aeson.ToJSON Match where
 
 instance Aeson.FromJSON Match
 
-data Response = Response
-  { responseError :: Maybe Text
-  , responseMatch :: Maybe Match
-  } deriving (Eq, Read, Show, Generic)
-
-instance Aeson.ToJSON Response where
-  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
-
-instance Aeson.FromJSON Response
 
 matchRaw :: Matcher -> Text -> Maybe Match
 matchRaw matcher body = do
@@ -107,15 +138,19 @@ messageMatch message =
 
 detectNamePrefixMatcher :: Text -> Maybe Matcher
 detectNamePrefixMatcher msg =
-  case Text.splitOn "\\" msg of
-    [prefix, _] ->
-      Just
-        Matcher
-          { matcherPrefix = Text.strip prefix
-          , matcherSuffix = Nothing
-          , matcherSystemMate = ""
-          }
-    _ -> Nothing
+  getAlt (foldMap (Alt . matcherForIndicator) validPrefixIndicators)
+  where
+    validPrefixIndicators = ["\\", "/", ":", ">"]
+    matcherForIndicator indicator =
+      case Text.splitOn indicator msg of
+        [prefix, _] ->
+          Just
+            Matcher
+              { matcherPrefix = Text.strip prefix
+              , matcherSuffix = Nothing
+              , matcherSystemMate = ""
+              }
+        _ -> Nothing
   
 
 detectSigilsMatcher :: Text -> Maybe Matcher
@@ -140,9 +175,14 @@ detectGenericMatcher msg =
           }
     _ -> Nothing
 
-detectMatcher :: Text -> Maybe Matcher
-detectMatcher msg =
-  getAlt
-    (foldMap
-       (\f -> Alt (f msg))
-       [detectNamePrefixMatcher, detectSigilsMatcher, detectGenericMatcher])
+detectMatcher :: DetectMatcher -> Maybe Matcher
+detectMatcher detectReq = do
+  foundMatcher <-
+    getAlt
+      (foldMap
+         (\f -> Alt (f msg))
+         [detectNamePrefixMatcher, detectSigilsMatcher, detectGenericMatcher])
+  return foundMatcher {matcherSystemMate = sysMate}
+  where
+    msg = detectMatcherMessage detectReq
+    sysMate = detectMatcherSystemMate detectReq
