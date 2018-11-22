@@ -32,8 +32,10 @@ type OldMatch struct {
 	Body string `json:"body"`
 }
 
-func (m OldMatch) Matchers() []Matcher {
-	print("METHOD: " + m.Method)
+// Reminder that the "Name" field in the old matcher does not actually
+// contain the system member name most of the time... So yeah. That's
+// why you have to pass in the systemmate externally when calling this.
+func (m OldMatch) Matchers(systemmate string) []Matcher {
 	matchers := make([]Matcher, 0)
 	switch m.Method {
 	case "Nameslash":
@@ -41,20 +43,20 @@ func (m OldMatch) Matchers() []Matcher {
 			matchers = append(matchers, Matcher{
 				Prefix: m.Name + sep,
 				Suffix: "",
-				Systemmate: m.Name,
+				Systemmate: systemmate,
 			})
 		}
 	case "Sigils":
 		matchers = append(matchers, Matcher{
 			Prefix: m.InitialSigil,
 			Suffix: m.EndSigil,
-			Systemmate: m.Name,
+			Systemmate: systemmate,
 		})
 	case "HalfSigilStart":
 		matchers = append(matchers, Matcher{
 			Prefix: m.InitialSigil,
 			Suffix: "",
-			Systemmate: m.Name,
+			Systemmate: systemmate,
 		})
 	}
 	return matchers
@@ -92,14 +94,18 @@ func MatchMessage(msg string, matchers []Matcher) (Match, error) {
 		return Match{}, errors.New(response["contents"].(string))
 	case "ResponseMatch":
 		contents := response["contents"].(map[string]interface{})
+		suffix := ""
+		if contents["matchSuffix"] != nil {
+			suffix = contents["matchSuffix"].(string)
+		}
 		return Match{
 			Prefix: contents["matchPrefix"].(string),
-			Suffix: contents["matchSuffix"].(string),
+			Suffix: suffix,
 			Body: contents["matchBody"].(string),
 			Systemmate: contents["matchSystemMate"].(string),
 		}, nil
 	default:
-		return Match{}, errors.New("error: unexpected response from proxy-matcher")
+		return Match{}, errors.New("error: unexpected response from proxy-matcher: " + tag)
 	}
 }
 

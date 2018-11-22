@@ -287,7 +287,16 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 	sb := strings.Builder{}
 	sb.WriteString("members:\n")
 	for i, m := range members {
-		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, m.Matchers))
+		matcherDetails := ""
+		if len(m.Matchers) > 0 {
+			matcherDetails = fmt.Sprintf("`%s`", m.Matchers[0])
+			if len(m.Matchers) > 1 {
+				for _, matcher := range m.Matchers[1:] {
+					matcherDetails = fmt.Sprintf("%s, `%s`", matcherDetails, matcher)
+				}
+			}
+		}
+		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, matcherDetails))
 	}
 
 	reply, err := s.ChannelMessageSend(m.ChannelID, sb.String())

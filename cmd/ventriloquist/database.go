@@ -27,7 +27,7 @@ type Systemmate struct {
 	Name          string
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
-	oldMatch      proxytag.OldMatch `storm:"Match"` //Bad hack to work with the old DB format
+	Match         proxytag.OldMatch //Bad hack to work with the old DB format
 	Matchers      []proxytag.Matcher
 }
 
@@ -109,13 +109,18 @@ func (d DB) findSystemmates(id string) ([]Systemmate, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, sm := range result {
+	for i, sm := range result {
 		// The logic here is that if there's no matchers, then this is a legacy
 		// account, so we should add the new matchers. However, if there's more than
 		// zero, this account has been migrated to the new matchers, so continuing to
 		// add the old matchers would just slowly grow the database for no reason.
 		if len(sm.Matchers) == 0 {
-			sm.Matchers = append(sm.Matchers, sm.oldMatch.Matchers()...)
+			// WHAT THE FUCK `range` COPIES.
+			// So, `range` *copies* the slice. That means that `sm` is not the same
+			// Systemmate in the `result` slice, it's a copy. If we updated
+			// `sm.Matchers` here, it wouldn't stick around. That's why we need to
+			// update `result[i].Matchers` instead.
+			result[i].Matchers = sm.Match.Matchers(sm.Name)
 		}
 	}
 	return result, nil

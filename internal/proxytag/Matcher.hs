@@ -9,6 +9,7 @@ import Data.Vector (Vector)
 import GHC.Generics
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Data.Monoid
+import Data.Char
 
 main :: IO ()
 main = do
@@ -154,19 +155,25 @@ detectNamePrefixMatcher msg =
   
 
 detectSigilsMatcher :: Text -> Maybe Matcher
-detectSigilsMatcher = detectGenericMatcher
+detectSigilsMatcher msg
+  | Text.length msg == 1 && not (isAlphaNum (Text.head msg)) =
+    Just
+      Matcher
+        {matcherPrefix = msg, matcherSuffix = Nothing, matcherSystemMate = ""}
+  | Text.length msg == 2 && not (Text.any isAlphaNum msg) =
+    Just
+      Matcher
+        { matcherPrefix = Text.singleton (Text.head msg)
+        , matcherSuffix = Just (Text.singleton (Text.last msg))
+        , matcherSystemMate = ""
+        }
+  | otherwise = Nothing
+  
 
 detectGenericMatcher :: Text -> Maybe Matcher
 detectGenericMatcher msg =
   case Text.splitOn "text" msg of
-    [prefix, _] ->
-      Just
-        Matcher
-          { matcherPrefix = Text.strip prefix
-          , matcherSuffix = Nothing
-          , matcherSystemMate = ""
-          }
-    [prefix, _, suffix] ->
+    [prefix, suffix] ->
       Just
         Matcher
           { matcherPrefix = Text.strip prefix
@@ -181,7 +188,7 @@ detectMatcher detectReq = do
     getAlt
       (foldMap
          (\f -> Alt (f msg))
-         [detectNamePrefixMatcher, detectSigilsMatcher, detectGenericMatcher])
+         [detectGenericMatcher, detectNamePrefixMatcher, detectSigilsMatcher])
   return foundMatcher {matcherSystemMate = sysMate}
   where
     msg = detectMatcherMessage detectReq
