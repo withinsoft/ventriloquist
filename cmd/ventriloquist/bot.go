@@ -148,10 +148,12 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		log.Printf("tag: %v", parv)
 
 		detectedMatcher, err := proxytag.DetectMatcher(tag, name)
-		if err.Error() == "error: no matcher detected" {
-			return fmt.Errorf("To provide a proxy sample, at the end of the command type what your systemmate saying `text` looks like.\n\nHere are some examples:\n[text]\n[text\n%s\\text", name)
-		} else if err != nil {
-			return err
+		if err != nil {
+			if err.Error() == "error: no matcher detected" {
+				return fmt.Errorf("To provide a proxy sample, at the end of the command type what your systemmate saying `text` looks like.\n\nHere are some examples:\n[text]\n[text\n%s\\text", name)
+			} else {
+				return err
+			}
 		}
 		matcher = detectedMatcher
 	}
@@ -190,10 +192,12 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 	name := parv[1]
 	line := strings.Join(parv[2:], " ")
 	matcher, err := proxytag.DetectMatcher(line, name)
-	if err.Error() == "error: no matcher detected" {
-		return fmt.Errorf("I couldn't detect your proxy method. Here are some examples to help you figure out the problem:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
-	} else if err != nil {
-		return err
+	if err != nil {
+		if err.Error() == "error: no matcher detected" {
+			return fmt.Errorf("I couldn't detect your proxy method. Here are some examples to help you figure out the problem:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
+		} else {
+			return err
+		}
 	}
 
 	var member Systemmate

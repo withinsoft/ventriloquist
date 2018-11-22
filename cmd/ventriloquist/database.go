@@ -27,7 +27,7 @@ type Systemmate struct {
 	Name          string
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
-	oldMatch      proxytag.OldMatch `json:"Match"` //Bad hack to work with the old DB format
+	oldMatch      proxytag.OldMatch `storm:"Match"` //Bad hack to work with the old DB format
 	Matchers      []proxytag.Matcher
 }
 
@@ -82,9 +82,6 @@ func (d DB) FindSystemmates(id string) ([]Systemmate, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, sm := range result {
-		sm.Matchers = append(sm.Matchers, sm.oldMatch.Matchers()...)
-	}
 
 	return result, nil
 }
@@ -111,6 +108,15 @@ func (d DB) findSystemmates(id string) ([]Systemmate, error) {
 	err := d.s.Find("CoreDiscordID", id, &result)
 	if err != nil {
 		return nil, err
+	}
+	for _, sm := range result {
+		// The logic here is that if there's no matchers, then this is a legacy
+		// account, so we should add the new matchers. However, if there's more than
+		// zero, this account has been migrated to the new matchers, so continuing to
+		// add the old matchers would just slowly grow the database for no reason.
+		if len(sm.Matchers) == 0 {
+			sm.Matchers = append(sm.Matchers, sm.oldMatch.Matchers()...)
+		}
 	}
 	return result, nil
 }
@@ -165,11 +171,14 @@ func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Syste
 	}
 
 	match, err := proxytag.MatchMessage(message, matchers)
-	if err.Error() == "error: no match found" {
-		return Systemmate{}, "", errors.New("database: systemmate not found")
-	} else if err != nil {
-		return Systemmate{}, "", err
+	if err != nil {
+		if err.Error() == "error: no match found" {
+			return Systemmate{}, "", errors.New("database: systemmate not found")
+		} else {
+			return Systemmate{}, "", err
+		}
 	}
+
 	sm, err := d.FindSystemmateByMatch(coreDiscordID, match)
 	if err != nil {
 		return Systemmate{}, "", err

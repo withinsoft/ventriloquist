@@ -33,6 +33,7 @@ type OldMatch struct {
 }
 
 func (m OldMatch) Matchers() []Matcher {
+	print("METHOD: " + m.Method)
 	matchers := make([]Matcher, 0)
 	switch m.Method {
 	case "Nameslash":
@@ -60,7 +61,7 @@ func (m OldMatch) Matchers() []Matcher {
 }
 
 func (m Matcher) String() string {
-	return "error: Matcher.String() unimplemented." /* TODO */
+	return m.Prefix + " text " + m.Suffix
 }
 
 func MatchMessage(msg string, matchers []Matcher) (Match, error) {
@@ -121,9 +122,13 @@ func DetectMatcher(msg string, systemmate string) (Matcher, error) {
 		return Matcher{}, errors.New(response["contents"].(string))
 	case "ResponseMatcher":
 		contents := response["contents"].(map[string]interface{})
+		suffix := ""
+		if contents["matcherSuffix"] != nil {
+			suffix = contents["matcherSuffix"].(string)
+		}
 		return Matcher{
 			Prefix: contents["matcherPrefix"].(string),
-			Suffix: contents["matcherSuffix"].(string),
+			Suffix: suffix,
 			Systemmate: contents["matcherSystemMate"].(string),
 		}, nil
 	default:

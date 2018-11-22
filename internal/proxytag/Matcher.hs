@@ -146,7 +146,7 @@ detectNamePrefixMatcher msg =
         [prefix, _] ->
           Just
             Matcher
-              { matcherPrefix = Text.strip prefix
+              { matcherPrefix = Text.strip prefix <> indicator
               , matcherSuffix = Nothing
               , matcherSystemMate = ""
               }
