@@ -9,21 +9,62 @@ import Data.Vector (Vector)
 import GHC.Generics
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import Data.Monoid
+import Data.Char
 
 main :: IO ()
 main = do
   input <- ByteString.Lazy.getContents
   let response =
-        case Aeson.decode input of
-          Nothing ->
-            Response
-              { responseError = Just "error: could not decode message json"
-              , responseMatch = Nothing
-              }
-          Just msg ->
-            Response {responseError = Nothing, responseMatch = messageMatch msg}
+        either (\x -> ResponseError (Text.append "error: " x)) id $ do
+          req <-
+            maybe
+              (Left "could not decode message json")
+              Right
+              (Aeson.decode input)
+          case req of
+            RequestDetectMatcher detectReq -> do
+              found <-
+                maybe
+                  (Left "no matcher detected")
+                  Right
+                  (detectMatcher detectReq)
+              return (ResponseMatcher found)
+            RequestMatchMessage msg -> do
+              found <- maybe (Left "no match found") Right (messageMatch msg)
+              return (ResponseMatch found)
       output = Aeson.encode response
   ByteString.Lazy.putStr output
+
+data Request
+  = RequestMatchMessage Message
+  | RequestDetectMatcher DetectMatcher
+  deriving (Eq, Read, Show, Generic)
+
+instance Aeson.FromJSON Request
+
+instance Aeson.ToJSON Request where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+data Response
+  = ResponseError Text
+  | ResponseMatch Match
+  | ResponseMatcher Matcher
+  deriving (Eq, Read, Show, Generic)
+
+instance Aeson.ToJSON Response where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+instance Aeson.FromJSON Response
+
+data DetectMatcher = DetectMatcher
+  { detectMatcherMessage :: Text
+  , detectMatcherSystemMate :: Text
+  } deriving (Eq, Read, Show, Generic)
+
+instance Aeson.ToJSON DetectMatcher where
+  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+instance Aeson.FromJSON DetectMatcher
 
 data Message = Message
   { messageBody :: Text
@@ -58,15 +99,6 @@ instance Aeson.ToJSON Match where
 
 instance Aeson.FromJSON Match
 
-data Response = Response
-  { responseError :: Maybe Text
-  , responseMatch :: Maybe Match
-  } deriving (Eq, Read, Show, Generic)
-
-instance Aeson.ToJSON Response where
-  toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
-
-instance Aeson.FromJSON Response
 
 matchRaw :: Matcher -> Text -> Maybe Match
 matchRaw matcher body = do
@@ -107,31 +139,41 @@ messageMatch message =
 
 detectNamePrefixMatcher :: Text -> Maybe Matcher
 detectNamePrefixMatcher msg =
-  case Text.splitOn "\\" msg of
-    [prefix, _] ->
-      Just
-        Matcher
-          { matcherPrefix = Text.strip prefix
-          , matcherSuffix = Nothing
-          , matcherSystemMate = ""
-          }
-    _ -> Nothing
+  getAlt (foldMap (Alt . matcherForIndicator) validPrefixIndicators)
+  where
+    validPrefixIndicators = ["\\", "/", ":", ">"]
+    matcherForIndicator indicator =
+      case Text.splitOn indicator msg of
+        [prefix, _] ->
+          Just
+            Matcher
+              { matcherPrefix = Text.strip prefix <> indicator
+              , matcherSuffix = Nothing
+              , matcherSystemMate = ""
+              }
+        _ -> Nothing
   
 
 detectSigilsMatcher :: Text -> Maybe Matcher
-detectSigilsMatcher = detectGenericMatcher
+detectSigilsMatcher msg
+  | Text.length msg == 1 && not (isAlphaNum (Text.head msg)) =
+    Just
+      Matcher
+        {matcherPrefix = msg, matcherSuffix = Nothing, matcherSystemMate = ""}
+  | Text.length msg == 2 && not (Text.any isAlphaNum msg) =
+    Just
+      Matcher
+        { matcherPrefix = Text.singleton (Text.head msg)
+        , matcherSuffix = Just (Text.singleton (Text.last msg))
+        , matcherSystemMate = ""
+        }
+  | otherwise = Nothing
+  
 
 detectGenericMatcher :: Text -> Maybe Matcher
 detectGenericMatcher msg =
   case Text.splitOn "text" msg of
-    [prefix, _] ->
-      Just
-        Matcher
-          { matcherPrefix = Text.strip prefix
-          , matcherSuffix = Nothing
-          , matcherSystemMate = ""
-          }
-    [prefix, _, suffix] ->
+    [prefix, suffix] ->
       Just
         Matcher
           { matcherPrefix = Text.strip prefix
@@ -140,9 +182,14 @@ detectGenericMatcher msg =
           }
     _ -> Nothing
 
-detectMatcher :: Text -> Maybe Matcher
-detectMatcher msg =
-  getAlt
-    (foldMap
-       (\f -> Alt (f msg))
-       [detectNamePrefixMatcher, detectSigilsMatcher, detectGenericMatcher])
+detectMatcher :: DetectMatcher -> Maybe Matcher
+detectMatcher detectReq = do
+  foundMatcher <-
+    getAlt
+      (foldMap
+         (\f -> Alt (f msg))
+         [detectGenericMatcher, detectNamePrefixMatcher, detectSigilsMatcher])
+  return foundMatcher {matcherSystemMate = sysMate}
+  where
+    msg = detectMatcherMessage detectReq
+    sysMate = detectMatcherSystemMate detectReq

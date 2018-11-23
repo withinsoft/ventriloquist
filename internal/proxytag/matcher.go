@@ -1,12 +1,25 @@
 package proxytag
 
 import (
+	"encoding/json"
+	"os/exec"
 	"errors"
-	"strings"
 )
 
-// Match is the result of a proxy tag scraping.
+type Matcher struct {
+	Prefix string
+	Suffix string
+	Systemmate string
+}
+
 type Match struct {
+	Prefix string
+	Suffix string
+	Body string
+	Systemmate string
+}
+
+type OldMatch struct {
 	// Name is the name of the systemmate, if the proxy method supplies this
 	Name string `json:"name,omitempty"`
 	// IntialSigil and EndSigil are the beginning and end non-alphanumeric
@@ -19,55 +32,135 @@ type Match struct {
 	Body string `json:"body"`
 }
 
-func (m Match) String() string {
-	sb := strings.Builder{}
-
-	sb.WriteString("Method: " + m.Method)
-
-	if m.Name != "" {
-		sb.WriteString(", Name: " + m.Name)
+// Reminder that the "Name" field in the old matcher does not actually
+// contain the system member name most of the time... So yeah. That's
+// why you have to pass in the systemmate externally when calling this.
+func (m OldMatch) Matchers(systemmate string) []Matcher {
+	matchers := make([]Matcher, 0)
+	switch m.Method {
+	case "Nameslash":
+		for _, sep := range []string{"\\", ":", "/", ">"} {
+			matchers = append(matchers, Matcher{
+				Prefix: m.Name + sep,
+				Suffix: "",
+				Systemmate: systemmate,
+			})
+		}
+	case "Sigils":
+		matchers = append(matchers, Matcher{
+			Prefix: m.InitialSigil,
+			Suffix: m.EndSigil,
+			Systemmate: systemmate,
+		})
+	case "HalfSigilStart":
+		matchers = append(matchers, Matcher{
+			Prefix: m.InitialSigil,
+			Suffix: "",
+			Systemmate: systemmate,
+		})
 	}
-
-	if m.InitialSigil != "" {
-		sb.WriteString(", Initial sigil: " + m.InitialSigil)
-	}
-
-	if m.EndSigil != "" {
-		sb.WriteString(", End sigil: " + m.EndSigil)
-	}
-
-	return sb.String()
+	return matchers
 }
 
-// Global errors.
-var (
-	ErrNoMatch = errors.New("proxytag: no match")
-)
+func (m Matcher) String() string {
+	return m.Prefix + " text " + m.Suffix
+}
 
-// Matcher is a function that can parse string data for proxied text.
-//
-// If no match is found, ErrNoMatch should be returned so the stack can continue
-// processing.
-type Matcher func(string) (Match, error)
-
-// Parse parses a message with a list of matchers and returns the
-func Parse(message string, matchers ...Matcher) (Match, error) {
-	if len(message) < 3 {
-		return Match{}, ErrNoMatch
-	}
-
-	for _, mat := range matchers {
-		mm, merr := mat(message)
-		if merr != nil {
-			if merr == ErrNoMatch {
-				continue
-			}
-
-			return mm, merr
+func MatchMessage(msg string, matchers []Matcher) (Match, error) {
+	requestMatchers := make([]map[string]interface{}, len(matchers))
+	for i, matcher := range matchers {
+		requestMatchers[i] = map[string]interface{}{
+			"matcherPrefix": matcher.Prefix,
+			"matcherSuffix": matcher.Suffix,
+			"matcherSystemMate": matcher.Systemmate,
 		}
-
-		return mm, nil
 	}
 
-	return Match{}, ErrNoMatch
+	request := map[string]interface{}{
+		"tag": "RequestMatchMessage",
+		"contents": map[string]interface{}{
+			"messageBody": msg,
+			"messageMatchers": requestMatchers,
+		},
+	}
+
+	response, err := matcherExec(request)
+	if err != nil {
+		return Match{}, err
+	}
+
+	switch tag := response["tag"].(string); tag {
+	case "ResponseError":
+		return Match{}, errors.New(response["contents"].(string))
+	case "ResponseMatch":
+		contents := response["contents"].(map[string]interface{})
+		suffix := ""
+		if contents["matchSuffix"] != nil {
+			suffix = contents["matchSuffix"].(string)
+		}
+		return Match{
+			Prefix: contents["matchPrefix"].(string),
+			Suffix: suffix,
+			Body: contents["matchBody"].(string),
+			Systemmate: contents["matchSystemMate"].(string),
+		}, nil
+	default:
+		return Match{}, errors.New("error: unexpected response from proxy-matcher: " + tag)
+	}
+}
+
+func DetectMatcher(msg string, systemmate string) (Matcher, error) {
+	request := map[string]interface{}{
+		"tag": "RequestDetectMatcher",
+		"contents": map[string]interface{}{
+			"detectMatcherMessage": msg,
+			"detectMatcherSystemMate": systemmate,
+		},
+	}
+
+	response, err := matcherExec(request)
+	if err != nil {
+		return Matcher{}, err
+	}
+
+	switch tag := response["tag"].(string); tag {
+	case "ResponseError":
+		return Matcher{}, errors.New(response["contents"].(string))
+	case "ResponseMatcher":
+		contents := response["contents"].(map[string]interface{})
+		suffix := ""
+		if contents["matcherSuffix"] != nil {
+			suffix = contents["matcherSuffix"].(string)
+		}
+		return Matcher{
+			Prefix: contents["matcherPrefix"].(string),
+			Suffix: suffix,
+			Systemmate: contents["matcherSystemMate"].(string),
+		}, nil
+	default:
+		return Matcher{}, errors.New("error: unexpected response from proxy-matcher")
+	}
+}
+
+func matcherExec(request map[string]interface{}) (map[string]interface{}, error) {
+	cmd := exec.Command("proxy-matcher")
+	cmdStdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+	err = json.NewEncoder(cmdStdin).Encode(request)
+	if err != nil {
+		return nil, err
+	}
+	cmdStdin.Close()
+	cmdStdout, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	var response map[string]interface{}
+	err = json.Unmarshal(cmdStdout, &response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }

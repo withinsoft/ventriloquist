@@ -125,7 +125,7 @@ func checkAvatarURL(aurl string) error {
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
-		return errors.New("usage: `;add <name> <avatar url> <proxy sample>`\n\n(without including the angle brackets; the proxy sample is what your systemmate saying `test` looks like. Check `;help` if in need of further assistance.)")
+		return errors.New("usage: `;add <name> <avatar url> <proxy sample>`\n\n(without including the angle brackets; the proxy sample is what your systemmate saying `text` looks like. Check `;help` if in need of further assistance.)")
 	}
 
 	name := parv[1]
@@ -136,9 +136,10 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	match := proxytag.Match{
-		Method: "Nameslash",
-		Name:   name,
+	matcher := proxytag.Matcher{
+		Prefix: name + "\\",
+		Suffix: "",
+		Systemmate: name,
 	}
 
 	if len(parv) > 3 {
@@ -146,24 +147,22 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 
 		log.Printf("tag: %v", parv)
 
-		var err error
-		match, err = proxytag.Parse(tag, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
+		detectedMatcher, err := proxytag.DetectMatcher(tag, name)
 		if err != nil {
-			return err
+			if err.Error() == "error: no matcher detected" {
+				return fmt.Errorf("To provide a proxy sample, at the end of the command type what your systemmate saying `text` looks like.\n\nHere are some examples:\n[text]\n[text\n%s\\text", name)
+			} else {
+				return err
+			}
 		}
-
-		if match.Body != "test" {
-			return fmt.Errorf("To provide a proxy sample, at the end of the command type what your systemmate saying `test` looks like, and not `%q`", match.Body)
-		}
-
-		match.Body = ""
+		matcher = detectedMatcher
 	}
 
 	sm := Systemmate{
 		CoreDiscordID: m.Author.ID,
 		Name:          name,
 		AvatarURL:     aurl,
-		Match:         match,
+		Matchers:      []proxytag.Matcher{matcher},
 	}
 
 	ln.Log(context.Background(), ln.Action("adding systemmate"), ln.F{
@@ -176,7 +175,7 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 		return err
 	}
 
-	reply, err := s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+match.String()+". Please use ;chproxy to customize this further.")
+	reply, err := s.ChannelMessageSend(m.ChannelID, "Added member "+sm.Name+" with the following options: "+matcher.String()+". Please use ;chproxy to customize this further.")
 
 	go deleteLater(s, 30*time.Second, m, reply)
 
@@ -184,21 +183,21 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 }
 
 func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []string) error {
-	const compPhrase = `test`
+	const compPhrase = `text`
 
 	if len(parv) == 1 {
-		return errors.New("usage: ;chproxy <systemmate name> <proxy them saying '" + compPhrase + "'>\n\n(don't include the angle brackets)")
+		return fmt.Errorf("usage: ;chproxy <systemmate name> <proxy sample>.\n\nHere are some examples:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
 	}
 
 	name := parv[1]
 	line := strings.Join(parv[2:], " ")
-	match, err := proxytag.Parse(line, proxytag.Nameslash, proxytag.Sigils, proxytag.HalfSigilStart, proxytag.HalfSigilEnd)
+	matcher, err := proxytag.DetectMatcher(line, name)
 	if err != nil {
-		return err
-	}
-
-	if !strings.EqualFold(match.Body, compPhrase) {
-		return fmt.Errorf("please proxy %q", compPhrase)
+		if err.Error() == "error: no matcher detected" {
+			return fmt.Errorf("I couldn't detect your proxy method. Here are some examples to help you figure out the problem:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
+		} else {
+			return err
+		}
 	}
 
 	var member Systemmate
@@ -214,16 +213,16 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 	}
 
 	if member.ID == "" {
-		return fmt.Errorf("no such systemmate %q, check .list", name)
+		return fmt.Errorf("no such systemmate %q, check ;list", name)
 	}
 
-	member.Match = match
+	member.Matchers = []proxytag.Matcher{matcher}
 	err = b.db.UpdateSystemmate(member)
 	if err != nil {
 		return err
 	}
 
-	reply, err := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s now is set to use the following proxying settings: %s", name, match))
+	reply, err := s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s now is set to use the following proxying settings: %s", name, matcher))
 	go deleteLater(s, 30*time.Second, m, reply)
 	return err
 }
@@ -288,7 +287,16 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 	sb := strings.Builder{}
 	sb.WriteString("members:\n")
 	for i, m := range members {
-		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, m.Match))
+		matcherDetails := ""
+		if len(m.Matchers) > 0 {
+			matcherDetails = fmt.Sprintf("`%s`", m.Matchers[0])
+			if len(m.Matchers) > 1 {
+				for _, matcher := range m.Matchers[1:] {
+					matcherDetails = fmt.Sprintf("%s, `%s`", matcherDetails, matcher)
+				}
+			}
+		}
+		sb.WriteString(fmt.Sprintf("%d. %s - <%s> - proxy details: %s\n", (i + 1), m.Name, m.AvatarURL, matcherDetails))
 	}
 
 	reply, err := s.ChannelMessageSend(m.ChannelID, sb.String())
@@ -415,7 +423,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 	f["name"] = "Generic"
 	f["member_id"] = member.ID
 	f["member_name"] = member.Name
-	f["proxy_match"] = member.Match.String()
+	f["proxy_match"] = fmt.Sprintf("%s", member.Matchers)
 	b.proxiedLine.Add(1)
 
 	wh, err := b.db.FindWebhook(m.ChannelID)

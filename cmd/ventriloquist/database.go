@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,7 +27,8 @@ type Systemmate struct {
 	Name          string
 	CoreDiscordID string `storm:"index"`
 	AvatarURL     string
-	Match         proxytag.Match
+	Match         proxytag.OldMatch //Bad hack to work with the old DB format
+	Matchers      []proxytag.Matcher
 }
 
 type Webhook struct {
@@ -109,6 +109,20 @@ func (d DB) findSystemmates(id string) ([]Systemmate, error) {
 	if err != nil {
 		return nil, err
 	}
+	for i, sm := range result {
+		// The logic here is that if there's no matchers, then this is a legacy
+		// account, so we should add the new matchers. However, if there's more than
+		// zero, this account has been migrated to the new matchers, so continuing to
+		// add the old matchers would just slowly grow the database for no reason.
+		if len(sm.Matchers) == 0 {
+			// WHAT THE FUCK `range` COPIES.
+			// So, `range` *copies* the slice. That means that `sm` is not the same
+			// Systemmate in the `result` slice, it's a copy. If we updated
+			// `sm.Matchers` here, it wouldn't stick around. That's why we need to
+			// update `result[i].Matchers` instead.
+			result[i].Matchers = sm.Match.Matchers(sm.Name)
+		}
+	}
 	return result, nil
 }
 
@@ -127,6 +141,19 @@ func (d DB) DeleteSystemmate(coreDiscordID, name string) error {
 	return errors.New("database: systemmate not found")
 }
 
+func (d DB) FindSystemMatchers(coreDiscordID string) ([]proxytag.Matcher, error) {
+	sms, err := d.FindSystemmates(coreDiscordID)
+	if err != nil {
+		return nil, err
+	}
+
+	matchers := make([]proxytag.Matcher, 0)
+	for _, sm := range sms {
+		matchers = append(matchers, sm.Matchers...)
+	}
+	return matchers, nil
+}
+
 func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Systemmate, error) {
 	sms, err := d.FindSystemmates(coreDiscordID)
 	if err != nil {
@@ -134,7 +161,7 @@ func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Syste
 	}
 
 	for _, sm := range sms {
-		if sm.Match.String() == m.String() {
+		if sm.Name == m.Systemmate {
 			return sm, nil
 		}
 	}
@@ -143,76 +170,26 @@ func (d DB) FindSystemmateByMatch(coreDiscordID string, m proxytag.Match) (Syste
 }
 
 func (d DB) FindSystemmateByMessage(coreDiscordID string, message string) (Systemmate, string, error) {
-	sms, err := d.FindSystemmates(coreDiscordID)
+	matchers, err := d.FindSystemMatchers(coreDiscordID)
 	if err != nil {
 		return Systemmate{}, "", err
 	}
 
-	matchers := make([]map[string]interface{}, 0)
-
-	for _, sm := range sms {
-		match := sm.Match
-		if match.Method == "Nameslash" {
-			for _, slash := range []string{"\\", ":", "/", ">"} {
-				matchers = append(matchers, map[string]interface{}{
-					"matcherPrefix": match.Name + slash,
-					"matcherSystemMate": sm.Name,
-				})
-			}
-		} else if match.Method == "Sigils" {
-			matchers = append(matchers, map[string]interface{}{
-				"matcherPrefix": match.InitialSigil,
-				"matcherSuffix": match.EndSigil,
-				"matcherSystemMate": sm.Name,
-			})
-		} else if match.Method == "HalfSigilStart" {
-			matchers = append(matchers, map[string]interface{}{
-				"matcherPrefix": match.InitialSigil,
-				"matcherSystemMate": sm.Name,
-			})
+	match, err := proxytag.MatchMessage(message, matchers)
+	if err != nil {
+		if err.Error() == "error: no match found" {
+			return Systemmate{}, "", errors.New("database: systemmate not found")
+		} else {
+			return Systemmate{}, "", err
 		}
 	}
 
-	matcherMessage := map[string]interface{}{
-		"messageBody": message,
-		"messageMatchers": matchers,
-	}
-
-	cmd := exec.Command("proxy-matcher")
-	cmdStdin, err := cmd.StdinPipe()
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	err = json.NewEncoder(cmdStdin).Encode(matcherMessage)
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	cmdStdin.Close()
-	cmdStdout, err := cmd.Output()
-	if err != nil {
-		return Systemmate{}, "", err
-	}
-	var matcherResponse map[string]interface{}
-	err = json.Unmarshal(cmdStdout, &matcherResponse)
+	sm, err := d.FindSystemmateByMatch(coreDiscordID, match)
 	if err != nil {
 		return Systemmate{}, "", err
 	}
 
-	if matcherResponse["responseError"] != nil || matcherResponse["responseMatch"] == nil {
-		return Systemmate{}, "", errors.New("database: systemmate not found")
-	}
-
-	match := matcherResponse["responseMatch"].(map[string]interface{})
-	matchSystemMate := match["matchSystemMate"].(string)
-	matchBody := match["matchBody"].(string)
-
-	for _, sm := range sms {
-		if sm.Name == matchSystemMate {
-			return sm, matchBody, nil
-		}
-	}
-
-	return Systemmate{}, "", errors.New("database: systemmate not found")
+	return sm, match.Body, nil
 }
 
 func (d DB) NukeSystem(coreDiscordID string) error {
