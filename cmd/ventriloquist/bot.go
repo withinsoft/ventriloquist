@@ -137,8 +137,8 @@ func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []st
 	}
 
 	matcher := proxytag.Matcher{
-		Prefix: name + "\\",
-		Suffix: "",
+		Prefix:     name + "\\",
+		Suffix:     "",
 		Systemmate: name,
 	}
 
@@ -458,7 +458,7 @@ func (b *bot) proxyScrape(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	var ebds []embeds
 	b.lpuLock.RLock()
-	lpt, ok := b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID]
+	lpt, ok := b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID+"/"+member.ID]
 	b.lpuLock.RUnlock()
 	if !ok {
 		ebds = wantEbds
@@ -489,7 +489,7 @@ skipEbds:
 	b.webhookSuccess.Add(1)
 
 	b.lpuLock.Lock()
-	b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID] = time.Now()
+	b.lastProxiedUser[m.ChannelID+"/"+m.Author.ID+"/"+member.ID] = time.Now()
 	b.lpuLock.Unlock()
 
 	err = s.ChannelMessageDelete(m.ChannelID, m.ID)
