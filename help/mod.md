@@ -39,6 +39,6 @@ ${PREFIX}mod_chproxy @Quora Drake
 then correct it with:
 
 ```
-${PREFIX}mod_chproxy @Quora Drake [test]
+${PREFIX}mod_chproxy @Quora Drake [text]
 ```
 and the proxying settings will be immediately updated.

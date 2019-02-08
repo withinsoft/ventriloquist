@@ -8,7 +8,7 @@ ${PREFIX}chproxy
 then correct it with:
 
 ```
-${PREFIX}chproxy Nicole [test]
+${PREFIX}chproxy Nicole [text]
 ```
 and the proxying settings will be immediately updated.
 
