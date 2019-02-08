@@ -2,14 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as ByteString.Lazy
+import Data.Char
+import Data.Foldable
+import Data.List
+import Data.Monoid
+import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Data.Aeson as Aeson
 import Data.Vector (Vector)
 import GHC.Generics
-import qualified Data.ByteString.Lazy as ByteString.Lazy
-import Data.Monoid
-import Data.Char
 
 main :: IO ()
 main = do
@@ -135,7 +138,13 @@ messageMatch message =
   getAlt
     (foldMap
        (\matcher -> Alt (match matcher (messageBody message)))
-       (messageMatchers message))
+       (sortedMessageMatchers message))
+
+sortedMessageMatchers :: Message -> [Matcher]
+sortedMessageMatchers message =
+  sortOn
+    (\matcher -> Down (Text.length (matcherPrefix matcher)))
+    (toList (messageMatchers message))
 
 detectNamePrefixMatcher :: Text -> Maybe Matcher
 detectNamePrefixMatcher msg =
