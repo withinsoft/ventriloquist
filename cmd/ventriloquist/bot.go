@@ -125,7 +125,7 @@ func checkAvatarURL(aurl string) error {
 
 func (b bot) addSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) < 3 {
-		return errors.New("usage: `;add <name> <avatar url> <proxy sample>`\n\n(without including the angle brackets; the proxy sample is what your systemmate saying `text` looks like. Check `;help` if in need of further assistance.)")
+		return errors.New("usage: `;add name direct_image_link proxy_settings\n\n`proxy_settings` is what your systemmate saying `text` looks like. Check `;help add` and `;help proxy` if you are unsure.")
 	}
 
 	name := parv[1]
@@ -186,7 +186,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 	const compPhrase = `text`
 
 	if len(parv) == 1 {
-		return fmt.Errorf("usage: ;chproxy <systemmate name> <proxy sample>.\n\nHere are some examples:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
+		return fmt.Errorf("usage: ;chproxy name proxy_settings\n\nHere are some examples:\n;chproxy Diana [%[1]s]\n;chproxy Diana [%[1]s\n;chproxy Diana Diana\\%[1]s\n;chproxy Diana D\\%[1]s", compPhrase)
 	}
 
 	name := parv[1]
@@ -229,7 +229,7 @@ func (b bot) changeProxy(s *discordgo.Session, m *discordgo.Message, parv []stri
 
 func (b bot) updateAvatar(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if l := len(parv); l <= 2 {
-		return errors.New("usage: ;update <name> <avatar url> [new name]\n\n(don't include the angle/square brackets)")
+		return errors.New("usage: ;update name direct_image_link new_name\n\nnew_name is optional")
 	}
 
 	name := parv[1]
@@ -306,7 +306,7 @@ func (b bot) listSystemmates(s *discordgo.Session, m *discordgo.Message, parv []
 
 func (b bot) delSystemmate(s *discordgo.Session, m *discordgo.Message, parv []string) error {
 	if len(parv) != 2 {
-		return errors.New("usage: ;del <name>\n\n(don't include the angle brackets)")
+		return errors.New("usage: ;del name\n\n(don't include the angle brackets)")
 	}
 
 	name := parv[1]

@@ -95,25 +95,25 @@ func main() {
 	must(cs.AddCmd("export", "exports a copy of all of your data (GDPR compliance)", bbot.NoPermissions, b.export))
 	must(cs.AddCmd("mod_list", "mod: lists systemmates for a user", b.modOnly, b.modForce(
 		"list",
-		"usage: ;mod_list <mention the user>\n\n(don't include the angle brackets)",
+		"usage: ;mod_list at_mention_the_user",
 		2,
 		b.listSystemmates,
 	)))
 	must(cs.AddCmd("mod_del", "mod: removes a systemmate for a user", b.modOnly, b.modForce(
 		"del",
-		"usage: ;mod_del <mention the user> <name>\n\n(don't include the angle brackets)",
+		"usage: ;mod_del at_mention_the_user name",
 		3,
 		b.delSystemmate,
 	)))
 	must(cs.AddCmd("mod_update", "mod: removes a systemmate for a user", b.modOnly, b.modForce(
 		"update",
-		"usage: ;mod_update <mention the user> <name> <new avatar url> <new name>\n\n(don't include the angle brackets)",
+		"usage: ;mod_update at_mention_the_user name direct_image_link new_name",
 		5,
 		b.updateAvatar,
 	)))
 	must(cs.AddCmd("mod_chproxy", "mod: changes proxy method of a systemmate for a user", b.modOnly, b.modForce(
 		"update",
-		"usage: ;mod_chproxy <mention the user>\n\n(don't include the angle brackets)",
+		"usage: ;mod_chproxy at_mention_the_user name proxy_settings",
 		999,
 		b.changeProxy,
 	)))
@@ -143,7 +143,17 @@ func main() {
 	if err != nil {
 		ln.FatalErr(ctx, err)
 	}
-	must(dg.UpdateStatus(0, ";help for help | ;add <name> <avatar url>"))
+
+	must(dg.UpdateStatus(0, ";help for help | ;add name direct_image_link"))
+	go func() {
+		t := time.Tick(time.Hour)
+		for {
+			select {
+			case <-t:
+				must(dg.UpdateStatus(0, ";help for help | ;add name direct_image_link"))
+			}
+		}
+	}()
 	ln.Log(ctx, ln.Action("opened discordgo websocket"))
 
 	ln.Log(ctx, ln.Info("waiting for lines to proxy"), ln.F{"to_discord": true})
