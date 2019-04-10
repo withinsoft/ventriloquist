@@ -5,6 +5,9 @@ services:
     build: .
     image: within/ventriloquist
     restart: always
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       ADMIN_ROLE: "${ADMIN_ROLE}"
       DISCORD_TOKEN: "${DISCORD_TOKEN}"
